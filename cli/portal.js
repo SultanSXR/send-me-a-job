@@ -21,26 +21,51 @@ button.ghost{background:transparent;color:var(--accent);border:1px solid var(--l
 .job{display:grid;gap:4px;border-top:1px solid var(--line);padding:12px 0}.job:first-child{border-top:0}
 .t{font-weight:600}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.pill{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 8px}
 a{color:var(--accent)}.err{color:var(--err)}
+h2{font-size:18px;margin:28px 0 0}h2 small{font-weight:400;font-size:13px}
+.chance{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px}.chance summary{cursor:pointer}.pct{font-weight:700;padding:0 8px;border-radius:999px;border:1px solid var(--line)}
+.chance.hi .pct{border-color:#1f6b3b}.chance.lo .pct{opacity:.8}.chance ul{margin:4px 0;padding-left:18px}
+.advice summary{cursor:pointer;font-weight:600}.advice li{margin:6px 0}
 </style></head><body><div class="wrap">
 <h1>Send me a job</h1><p class="muted">Your jobs, stored on this computer in data/jobs.json. Packs are built with your Anthropic API key. Queued jobs are filled in by the Claude desktop app (hands-off mode).</p>
 <div class="card"><form id="add"><input name="url" type="url" required placeholder="Paste a job link"><select name="track"><option value="">Track: auto</option><option value="legal">Legal</option><option value="business">Business</option></select><button>Add</button></form><div id="msg" class="muted"></div></div>
-<div class="card" id="list">Loading…</div></div>
+<div id="advice"></div>
+<h2>Suggested for you <small class="muted">best chance first</small></h2><div class="card" id="sugs">Loading…</div>
+<h2>Your jobs</h2><div class="card" id="list">Loading…</div></div>
 <script>
 const $=s=>document.querySelector(s);
-function el(t,p,...k){const e=document.createElement(t);for(const[a,v]of Object.entries(p||{})){if(a==="text")e.textContent=v;else e.setAttribute(a,v)}k.forEach(x=>x&&e.append(x));return e}
+function el(t,p,...k){const e=document.createElement(t);for(const[a,v]of Object.entries(p||{})){if(a==="text")e.textContent=v;else e.setAttribute(a,v)}k.flat().forEach(x=>x!=null&&x!==false&&e.append(x));return e}
+const safe=u=>{try{const x=new URL(u);return x.protocol==="https:"||x.protocol==="http:"}catch(_){return false}};
 async function api(p,o){const r=await fetch(p,o);const j=await r.json();if(!r.ok)throw new Error(j.error||r.status);return j}
-async function load(){const jobs=await api("/api/jobs");const L=$("#list");L.textContent="";
- if(!jobs.length){L.append(el("p",{class:"muted",text:"No jobs yet. Paste a link above."}));return}
- for(const j of jobs.slice().reverse()){const row=el("div",{class:"row"},el("span",{class:"pill",text:j.status}),el("span",{class:"pill",text:j.track||"track: auto"}));
-  if(j.status==="new"){const b=el("button",{text:"Build pack"});b.onclick=async()=>{b.disabled=true;b.textContent="Building…";try{await api("/api/build/"+j.id,{method:"POST"})}catch(e){alert(e.message)}load()};row.append(b)}
-  if(j.files){for(const[k,v]of Object.entries(j.files))row.append(el("a",{href:"/files/"+j.id+"/"+v.split(/[\\\\/]/).pop(),text:k}))}
-  const mk=(label,st,cls)=>{const b=el("button",{class:cls||"ghost",text:label});b.onclick=async()=>{await api("/api/mark/"+j.id+"/"+st,{method:"POST"});load()};row.append(b)};
-  if(j.status==="ready"){mk("Queue for applying","queued","");mk("Mark applied","applied")}
-  if(j.status==="queued")mk("Unqueue","ready");
-  if(["awaiting-approval","needs-info"].includes(j.status))mk("Mark applied","applied");
-  L.append(el("div",{class:"job"},el("div",{class:"t"},el("a",{href:j.url,target:"_blank",rel:"noopener",text:j.company?j.company+" – "+j.role:j.url})),j.summary?el("div",{class:"muted",text:j.summary}):null,
+function chance(j){const c=j.chance;if(!c)return el("div",{class:"muted",text:"Chance of an offer: not estimated yet (run: send-me-a-job score)"});
+ const d=el("details",{class:"chance "+(c.percent>=35?"hi":c.percent>=12?"mid":"lo")});
+ d.append(el("summary",{},el("span",{class:"pct",text:c.percent+"%"})," estimated chance of an offer ("+c.low+"–"+c.high+"%, "+c.confidence+" confidence)"));
+ if(c.summary)d.append(el("p",{text:c.summary}));
+ if(c.factors?.length)d.append(el("ul",{},c.factors.map(f=>el("li",{},el("b",{text:f.name+" "+f.score+"/100: "}),f.note))));
+ if(c.basis)d.append(el("div",{class:"muted",text:"Starting point: "+c.basis}));
+ const src=(c.sources||[]).filter(s=>safe(s.url));if(src.length)d.append(el("div",{class:"muted"},"Sources: ",src.map((s,i)=>[i?" · ":"",el("a",{href:s.url,target:"_blank",rel:"noopener",text:s.title||s.url})])));
+ d.append(el("div",{class:"muted",text:"An estimate from public information, not a prediction. Private to this computer."}));return d}
+function mkBtn(row,j,label,st,ghost){const b=el("button",{class:ghost?"ghost":"",text:label});b.onclick=async()=>{b.disabled=true;await api("/api/mark/"+j.id+"/"+st,{method:"POST"});load()};row.append(b)}
+function item(j){const row=el("div",{class:"row"},el("span",{class:"pill",text:j.status}),el("span",{class:"pill",text:j.track||"track: auto"}));
+ if(j.status==="suggested"){mkBtn(row,j,"Add to my jobs","new");mkBtn(row,j,"Not for me","dismissed",1)}
+ if(j.status==="new"){const b=el("button",{text:"Build pack"});b.onclick=async()=>{b.disabled=true;b.textContent="Building…";try{await api("/api/build/"+j.id,{method:"POST"})}catch(e){alert(e.message)}load()};row.append(b)}
+ if(j.files){for(const[k,v]of Object.entries(j.files))row.append(el("a",{href:"/files/"+j.id+"/"+v.split(/[\\\\/]/).pop(),text:k}))}
+ if(j.status==="ready"){mkBtn(row,j,"Queue for applying","queued");mkBtn(row,j,"Mark applied","applied",1)}
+ if(j.status==="queued")mkBtn(row,j,"Unqueue","ready",1);
+ if(["awaiting-approval","needs-info"].includes(j.status))mkBtn(row,j,"Mark applied","applied",1);
+ const open=!["applied","skipped","dismissed","replaced"].includes(j.status);
+ return el("div",{class:"job"},el("div",{class:"t"},el("a",{href:j.url,target:"_blank",rel:"noopener",text:j.company?j.company+" – "+j.role:j.url})),
+  j.summary?el("div",{class:"muted",text:j.summary}):null, j.why&&j.status==="suggested"?el("div",{class:"muted",text:j.why}):null,
   j.status==="needs-info"&&j.questions?el("div",{class:"err",text:"Needs you: "+[].concat(j.blocker||[],j.questions).join(" · ")+" — answer in the Claude app."}):null,
-  j.status==="awaiting-approval"?el("div",{class:"err",text:"Filled in and waiting for your yes — reply \"submit "+(j.company||"")+"\" in the Claude app."}):null,row))}}
+  j.status==="awaiting-approval"?el("div",{class:"err",text:"Filled in and waiting for your yes — reply \\"submit "+(j.company||"")+"\\" in the Claude app."}):null,
+  open?chance(j):null,row)}
+async function load(){const jobs=await api("/api/jobs");const pct=j=>j.chance?j.chance.percent:-1;
+ const S=$("#sugs");S.textContent="";const sg=jobs.filter(j=>j.status==="suggested").sort((a,b)=>pct(b)-pct(a));
+ if(!sg.length)S.append(el("p",{class:"muted",text:"No suggestions yet. Run: send-me-a-job suggest"}));sg.forEach(j=>S.append(item(j)));
+ const L=$("#list");L.textContent="";const mine=jobs.filter(j=>!["suggested","dismissed","replaced"].includes(j.status));
+ if(!mine.length){L.append(el("p",{class:"muted",text:"No jobs yet. Paste a link above."}))}else mine.slice().reverse().forEach(j=>L.append(item(j)));
+ const a=await api("/api/advice"),A=$("#advice");A.textContent="";
+ if(a&&a.items&&a.items.length){const d=el("details",{class:"card advice"},el("summary",{text:"How to raise your chances ("+a.items.length+")"}));if(a.summary)d.append(el("p",{class:"muted",text:a.summary}));
+  d.append(el("ol",{},a.items.map(i=>el("li",{},el("b",{text:i.title})," — "+i.detail,i.why?el("div",{class:"muted",text:"Why: "+i.why}):null))));A.append(d)}}
 $("#add").onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{const r=await api("/api/add",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(d)});$("#msg").textContent=r.added?"Added.":"Already in your list.";e.target.reset();load()}catch(x){$("#msg").textContent=x.message}};
 load();
 </script></body></html>`;
@@ -62,6 +87,7 @@ function serve(cfg, port) {
       const u = new URL(req.url, "http://x");
       if (req.method === "GET" && u.pathname === "/") return send(res, 200, PAGE, "text/html; charset=utf-8");
       if (req.method === "GET" && u.pathname === "/api/jobs") return send(res, 200, lib.readJobs(cfg).map(({ advertText, ...j }) => j));
+      if (req.method === "GET" && u.pathname === "/api/advice") return send(res, 200, lib.readAdvice(cfg) || {});
       if (req.method === "POST" && u.pathname === "/api/add") { const b = await readBody(req); return send(res, 200, lib.addJob(cfg, { url: b.url, track: b.track, source: "portal" })); }
       let m;
       if (req.method === "POST" && (m = u.pathname.match(/^\/api\/build\/([\w-]+)$/))) {

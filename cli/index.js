@@ -14,7 +14,10 @@ Usage:
   send-me-a-job pull                     Import links from your Netlify form (needs NETLIFY_TOKEN)
   send-me-a-job list [--status ready]    Show jobs
   send-me-a-job build [id ...]           Build packs for new jobs (or the ids given)
-  send-me-a-job run                      pull (if configured) + build — use this from cron
+  send-me-a-job run [--suggest]          pull (if configured) + build + score [+ suggest] — use from cron
+  send-me-a-job score [id ...]           Estimate your chance of an offer for open jobs (private)
+  send-me-a-job suggest [--count 5]      Find open roles with your best chances, ranked
+  send-me-a-job advice                   Profile changes that would raise your chances
   send-me-a-job mark <id> <status>       Set status: ${lib.STATUSES.join(", ")}
   send-me-a-job render <spec.json> [dir] Render a CV + letter from a spec, no API call
   send-me-a-job serve [--port 4321]      Open the local portal in your browser
@@ -71,13 +74,29 @@ async function main() {
     case "list": {
       const jobs = lib.readJobs(cfg).filter(j => !f.status || j.status === f.status);
       if (!jobs.length) { console.log("No jobs yet. Add one with: send-me-a-job add <url>"); break; }
-      for (const j of jobs) console.log(`${j.id}  ${j.status.padEnd(9)} ${(j.track || "?").padEnd(8)} ${j.company ? `${j.company} – ${j.role}` : j.url}${j.summary ? "  · " + j.summary : ""}`);
+      for (const j of jobs) console.log(`${j.id}  ${j.status.padEnd(9)} ${(j.track || "?").padEnd(8)} ${j.chance ? String(j.chance.percent).padStart(2) + "%" : "  –"}  ${j.company ? `${j.company} – ${j.role}` : j.url}${j.summary ? "  · " + j.summary : ""}`);
       break;
     }
     case "build": await buildMany(cfg, f._); break;
     case "run": {
       if (cfg.netlify?.formId && process.env.NETLIFY_TOKEN) console.log(`Imported ${await lib.pullNetlify(cfg)} new link(s) from Netlify.`);
       await buildMany(cfg, []);
+      const profile = lib.loadProfile(cfg);
+      await lib.scoreOpen(cfg, profile);
+      if (f.suggest) await lib.suggest(cfg, profile, cfg.suggestCount || 5);
+      break;
+    }
+    case "score": await lib.scoreOpen(cfg, lib.loadProfile(cfg), f._); break;
+    case "suggest": {
+      console.log("Researching roles where your chances are best… (this can take a few minutes)");
+      const n = await lib.suggest(cfg, lib.loadProfile(cfg), Number(f.count) || cfg.suggestCount || 5);
+      console.log(`Added ${n} suggestion(s). Add one to your jobs with: send-me-a-job mark <id> new`);
+      break;
+    }
+    case "advice": {
+      const a = await lib.makeAdvice(cfg, lib.loadProfile(cfg));
+      console.log(a.summary + "\n");
+      a.items.forEach((i, n) => console.log(`${n + 1}. ${i.title}\n   ${i.detail}${i.why ? "\n   Why: " + i.why : ""}\n`));
       break;
     }
     case "mark": {

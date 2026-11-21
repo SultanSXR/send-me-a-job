@@ -19,10 +19,21 @@ const server = http.createServer((req, res) => {
   if (req.url === "/v1/messages") {
     let b = ""; req.on("data", c => b += c); req.on("end", () => {
       const body = JSON.parse(b);
-      assert.ok(body.system.includes("ONLY facts in the profile"));
-      const skip = body.messages[0].content.includes("/job-skip");
-      const out = skip ? { decision: "skip", reason: "Cannot sponsor visas", company: "No Sponsor Ltd", role: "Analyst" }
-        : { decision: "build", reason: "Good fit", company: "Example Co", role: "Marketing Executive", track: "business", location: "London", deadline: "1 Feb 2027", sponsorship: "unknown", gaps: [], screeningQuestions: [], spec };
+      const chance = (p) => ({ percent: p, low: p - 1, high: p + 2, confidence: "medium", basis: "test base rate", summary: "Test summary.",
+        factors: [{ name: "Skills match", score: 60, note: "ok" }], sources: [{ title: "Example", url: "https://example.com/src" }] });
+      let out;
+      if (body.system.startsWith("CHANCE ESTIMATE")) { assert.ok(body.tools && body.tools[0].type.startsWith("web_search")); out = { chance: chance(4) }; }
+      else if (body.system.startsWith("JOB SUGGESTIONS")) out = { suggestions: [
+        { company: "Best Co", role: "Trainee", track: "legal", url: "https://best.example/jobs/1", why: "Fits.", sponsorship: "yes", chance: chance(6) },
+        { company: "Low Co", role: "Analyst", track: "business", url: "https://low.example/jobs/2", why: "Meh.", sponsorship: "unknown", chance: chance(1) },
+        { company: "Dup", role: "Dup", track: "business", url: `http://127.0.0.1:${server.address().port}/job/1`, why: "dup", sponsorship: "yes", chance: chance(9) }] };
+      else if (body.system.startsWith("PROFILE ADVICE")) out = { summary: "Do these.", items: [{ title: "Add figures", detail: "Add real numbers.", why: "Low skills score." }] };
+      else {
+        assert.ok(body.system.includes("ONLY facts in the profile"));
+        const skip = body.messages[0].content.includes("/job-skip");
+        out = skip ? { decision: "skip", reason: "Cannot sponsor visas", company: "No Sponsor Ltd", role: "Analyst" }
+          : { decision: "build", reason: "Good fit", company: "Example Co", role: "Marketing Executive", track: "business", location: "London", deadline: "1 Feb 2027", sponsorship: "unknown", gaps: [], screeningQuestions: [], spec };
+      }
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ content: [{ type: "text", text: "Here it is:\n" + JSON.stringify(out) }] }));
     });
@@ -51,6 +62,14 @@ server.listen(0, "127.0.0.1", async () => {
     const ready = jobs.find(j => j.status === "ready"), skipped = jobs.find(j => j.status === "skipped");
     assert.ok(ready && skipped, "one ready, one skipped");
     for (const f of Object.values(ready.files)) assert.ok(fs.statSync(path.join(tmp, f)).size > (f.endsWith(".md") ? 100 : 1000), f);
+    assert.strictEqual(ready.chance && ready.chance.percent, 4, "scored after build");
+    console.log(await run("suggest", "--count", "2"));
+    let all = JSON.parse(fs.readFileSync(path.join(tmp, "data/jobs.json"), "utf8"));
+    const sug = all.filter(j => j.status === "suggested");
+    assert.strictEqual(sug.length, 1, "only the 6% role passes the 2% minimum; duplicate ignored");
+    assert.strictEqual(sug[0].company, "Best Co");
+    console.log(await run("advice"));
+    assert.ok(JSON.parse(fs.readFileSync(path.join(tmp, "data/advice.json"), "utf8")).items.length === 1);
     console.log(await run("list"));
     console.log(await run("mark", ready.id, "applied"));
 
@@ -60,9 +79,12 @@ server.listen(0, "127.0.0.1", async () => {
     const srv = portal.serve(require("./lib").loadConfig(), 0);
     await new Promise(r => srv.on("listening", r));
     const pb = `http://127.0.0.1:${srv.address().port}`;
-    assert.ok((await (await fetch(pb + "/")).text()).includes("Send me a job"));
+    const html = await (await fetch(pb + "/")).text();
+    assert.ok(html.includes("Send me a job"));
+    new Function(html.match(/<script>([\s\S]*)<\/script>/)[1]); // page script parses
     const list = await (await fetch(pb + "/api/jobs")).json();
-    assert.strictEqual(list.length, 2);
+    assert.strictEqual(list.length, 3);
+    assert.ok((await (await fetch(pb + "/api/advice")).json()).items.length === 1);
     const add = await (await fetch(pb + "/api/add", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: "https://example.com/careers/1" }) })).json();
     assert.ok(add.added);
     const q = await (await fetch(`${pb}/api/mark/${skipped.id}/awaiting-approval`, { method: "POST", headers: { origin: pb } })).json();

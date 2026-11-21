@@ -2,6 +2,8 @@
 
 Turn job links into tailored application packs. For each link it reads the advert, checks the role suits you and doesn't rule out your work rights, then writes a CV and cover letter (.docx, A4) using **only facts from your own profile**. It keeps a tracked list of every job.
 
+It also estimates, privately, **your chance of getting each job**. The research covers the advert, the employer's hiring history, the market, published patterns of who got the job before, and visa sponsorship. It then **suggests the open roles where your chances are best** and tells you **what to change in your profile to raise them**.
+
 You can use it in three ways:
 
 | | In the Claude app | Hands-off on your computer | Standalone (no Claude login) |
@@ -98,14 +100,38 @@ Each pack goes into `out/<job id>/` and contains `<Name>_<Company>_<Role>_CV.doc
 | `add <url> [--track legal\|business] [--note …] [--text file]` | Add a job link (duplicates are ignored) |
 | `pull` | Import links from your Netlify form (needs `NETLIFY_TOKEN` and `netlify.formId`) |
 | `build [id …]` | Build packs for new jobs, or for the ids given |
-| `run` | `pull` (if configured), then `build`. Use this from cron |
+| `run [--suggest]` | `pull` (if configured), `build`, `score` (and `suggest`). Use this from cron |
 | `list [--status ready]` | Show jobs and their status |
 | `mark <id> <status>` | Set a status: `new`, `ready`, `queued` (for hands-off applying), `applied`, `skipped`, … |
+| `score [id …]` | Estimate your chance of an offer for open jobs (private) |
+| `suggest [--count 5]` | Find open roles where your chances are best, ranked |
+| `advice` | Profile changes that would raise your chances |
 | `render <spec.json> [dir]` | Render a CV and letter from a spec, with no API call |
 | `serve [--port 4321]` | Local web portal |
 | `package-skill` | Build `dist/send-me-a-job-skill.zip` |
 
 Environment variables: `ANTHROPIC_API_KEY` (required to build), `ANTHROPIC_MODEL` (optional, default `claude-sonnet-5-5`), `ANTHROPIC_BASE_URL` (optional), `NETLIFY_TOKEN` (optional).
+
+## Your chances, best-chance suggestions and advice
+
+Every job you haven't applied to gets a private estimate, for example **"3% (likely 1–5%), low confidence"**. Expand it to see five scored factors with sources:
+- **Skills match**: how you compare with the advert's requirements.
+- **Hiring history**: places per year, applicants per place, and sponsorship record.
+- **Market & competition**: how many people are applying now.
+- **Past hires like you**: published, anonymous patterns only. It never looks up named individuals.
+- **Visa sponsorship**.
+
+The numbers are deliberately honest. Graduate schemes often take about 1 in 100 applicants, so low figures are normal. The value is in comparing jobs and seeing what moves your chances.
+
+| Command | What it does |
+|---|---|
+| `send-me-a-job score` | Estimates jobs without a recent estimate. `build` also scores each new pack (`scoreOnBuild`). |
+| `send-me-a-job suggest` | Researches open roles where your chances are best, adds those at or above `minSuggestChance` (default 2%) ranked highest first, and retires weaker suggestions |
+| `send-me-a-job advice` | Turns the estimates into up to 8 concrete changes to your CV, LinkedIn or targeting. It never suggests claiming anything untrue. |
+
+The local portal shows suggestions ranked by chance, an "Add to my jobs" button, and a "How to raise your chances" box. All of it stays on your computer: nothing about your chances is ever shown on the public form. In the Claude app, ask *"what are my chances for these jobs?"*, *"suggest jobs I'm likely to get"* or *"how can I improve my chances?"*.
+
+These steps use Anthropic's web search tool through your API key, so each estimate costs a few searches. `researchSearches` and `suggestSearches` in `config.json` cap them.
 
 ## 4. Let friends send you jobs (optional)
 
@@ -138,7 +164,7 @@ links ─┬─ CLI `add` / local portal
 Code map:
 
 - `cli/index.js`: command parsing and every command.
-- `cli/lib.js`: config, the job store (`data/jobs.json`), advert fetching (`fetchAdvert`), tailoring with the Anthropic Messages API (`tailor`), building packs (`buildJob`) and Netlify import (`pullNetlify`).
+- `cli/lib.js`: config, the job store (`data/jobs.json`), advert fetching (`fetchAdvert`), tailoring with the Anthropic Messages API (`tailor`), building packs (`buildJob`), chance estimates with web search (`scoreJob`, `scoreOpen`), best-chance suggestions (`suggest`), profile advice (`makeAdvice`) and Netlify import (`pullNetlify`).
 - `cli/portal.js`: the local web portal and its small JSON API.
 - `cli/test.js`: an end-to-end test against a mock API (`npm test`, needs no key).
 - `skill/send-me-a-job/scripts/make_docs.js`: the `.docx` renderer, shared by the skill and the CLI.

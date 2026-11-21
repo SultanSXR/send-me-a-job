@@ -5,6 +5,12 @@
   "outputDir": "out",
   "model": "claude-sonnet-5-5",
   "maxJobsPerRun": 8,
+  "scoreOnBuild": true,
+  "maxScoresPerRun": 6,
+  "researchSearches": 8,
+  "suggestCount": 5,
+  "suggestSearches": 15,
+  "minSuggestChance": 2,
   "netlify": {
     "_comment": "Optional: pull links from a Netlify form (see public-form/). Needs NETLIFY_TOKEN in the environment.",
     "formId": ""
