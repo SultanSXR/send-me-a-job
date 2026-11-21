@@ -7,7 +7,7 @@ Show a numbered list of `ready` jobs, soonest closing date first: Company – Ro
 
 ## 2. For each picked job
 1. **Files.** Find the pack's CV and cover letter, and read them so you know what you are submitting.
-2. **Open the apply page** in a browser tool, if one is available.
+2. **Open the apply page** in the Claude desktop app's built-in browser (load the built-in-browser skill first), or in Claude in Chrome if the built-in browser isn't available. Leave the tab open until the job is submitted or skipped.
 3. **Accounts.** Never type a password or create an account. If the site needs one, ask the user to sign in or register in the browser, and wait. CAPTCHAs and email verification codes are theirs to do. If a verification link arrives by email for a submission they already approved, you may open it.
 4. **Fill the form** only with profile facts and the pack's documents.
    - Anything the profile doesn't cover (phone, salary expectation, notice period, start date, relocation, references, individual grades): ask the user, all in one message for the job. Never guess. If they want to keep the answers, offer to add them to the profile.
@@ -18,6 +18,9 @@ Show a numbered list of `ready` jobs, soonest closing date first: Company – Ro
 5. **Uploads.** Use the browser tool's file-upload ability. Without one, set the file input from JavaScript (build a `File` from the bytes, put it in a `DataTransfer`, assign it to `input.files`, dispatch `change`). If that fails, give the files to the user to attach.
 6. **Stop before Submit.** In one message, list every value entered, the files attached, the free-text answers, and any terms, privacy or consent boxes that submitting will tick. Ask: "Submit this application to <Company>? (yes/no)".
 7. **Submit only after a clear yes** for this job. Check the confirmation page, then set status `applied` and record any reference number.
+
+## If the user has stepped away
+If the user stops replying, or said they are leaving, don't wait in silence. Park the job: set status `awaiting-approval` or `needs-info`, record the summary or questions, and send one notification (push-notification tool if available) naming the company and what is needed. Then go on to the next job. `references/hands-off.md` describes the full unattended mode.
 
 ## Finish
 Sum up which applications went in, with their references, and which are waiting on the user and why.

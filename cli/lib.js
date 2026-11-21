@@ -27,7 +27,8 @@ function loadProfile(cfg) {
 }
 
 // ---------- store (data/jobs.json) ----------
-const STATUSES = ["new", "preparing", "ready", "applied", "skipped"];
+// queued / awaiting-approval / needs-info are used by the Claude skill's hands-off apply mode.
+const STATUSES = ["new", "preparing", "ready", "queued", "awaiting-approval", "needs-info", "applied", "skipped"];
 
 function storeFile(cfg) { return path.resolve(process.cwd(), cfg.dataDir, "jobs.json"); }
 function readJobs(cfg) {

@@ -22,7 +22,7 @@ button.ghost{background:transparent;color:var(--accent);border:1px solid var(--l
 .t{font-weight:600}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.pill{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:1px 8px}
 a{color:var(--accent)}.err{color:var(--err)}
 </style></head><body><div class="wrap">
-<h1>Send me a job</h1><p class="muted">Your jobs, stored on this computer in data/jobs.json. Packs are built with your Anthropic API key.</p>
+<h1>Send me a job</h1><p class="muted">Your jobs, stored on this computer in data/jobs.json. Packs are built with your Anthropic API key. Queued jobs are filled in by the Claude desktop app (hands-off mode).</p>
 <div class="card"><form id="add"><input name="url" type="url" required placeholder="Paste a job link"><select name="track"><option value="">Track: auto</option><option value="legal">Legal</option><option value="business">Business</option></select><button>Add</button></form><div id="msg" class="muted"></div></div>
 <div class="card" id="list">Loading…</div></div>
 <script>
@@ -34,8 +34,13 @@ async function load(){const jobs=await api("/api/jobs");const L=$("#list");L.tex
  for(const j of jobs.slice().reverse()){const row=el("div",{class:"row"},el("span",{class:"pill",text:j.status}),el("span",{class:"pill",text:j.track||"track: auto"}));
   if(j.status==="new"){const b=el("button",{text:"Build pack"});b.onclick=async()=>{b.disabled=true;b.textContent="Building…";try{await api("/api/build/"+j.id,{method:"POST"})}catch(e){alert(e.message)}load()};row.append(b)}
   if(j.files){for(const[k,v]of Object.entries(j.files))row.append(el("a",{href:"/files/"+j.id+"/"+v.split(/[\\\\/]/).pop(),text:k}))}
-  if(j.status==="ready"){const b=el("button",{class:"ghost",text:"Mark applied"});b.onclick=async()=>{await api("/api/mark/"+j.id+"/applied",{method:"POST"});load()};row.append(b)}
-  L.append(el("div",{class:"job"},el("div",{class:"t"},el("a",{href:j.url,target:"_blank",rel:"noopener",text:j.company?j.company+" – "+j.role:j.url})),j.summary?el("div",{class:"muted",text:j.summary}):null,row))}}
+  const mk=(label,st,cls)=>{const b=el("button",{class:cls||"ghost",text:label});b.onclick=async()=>{await api("/api/mark/"+j.id+"/"+st,{method:"POST"});load()};row.append(b)};
+  if(j.status==="ready"){mk("Queue for applying","queued","");mk("Mark applied","applied")}
+  if(j.status==="queued")mk("Unqueue","ready");
+  if(["awaiting-approval","needs-info"].includes(j.status))mk("Mark applied","applied");
+  L.append(el("div",{class:"job"},el("div",{class:"t"},el("a",{href:j.url,target:"_blank",rel:"noopener",text:j.company?j.company+" – "+j.role:j.url})),j.summary?el("div",{class:"muted",text:j.summary}):null,
+  j.status==="needs-info"&&j.questions?el("div",{class:"err",text:"Needs you: "+[].concat(j.blocker||[],j.questions).join(" · ")+" — answer in the Claude app."}):null,
+  j.status==="awaiting-approval"?el("div",{class:"err",text:"Filled in and waiting for your yes — reply \"submit "+(j.company||"")+"\" in the Claude app."}):null,row))}}
 $("#add").onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{const r=await api("/api/add",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(d)});$("#msg").textContent=r.added?"Added.":"Already in your list.";e.target.reset();load()}catch(x){$("#msg").textContent=x.message}};
 load();
 </script></body></html>`;
@@ -65,7 +70,7 @@ function serve(cfg, port) {
         const done = await lib.buildJob(cfg, lib.loadProfile(cfg), job);
         return send(res, 200, done || lib.readJobs(cfg).find(j => j.id === m[1]));
       }
-      if (req.method === "POST" && (m = u.pathname.match(/^\/api\/mark\/([\w-]+)\/(\w+)$/))) {
+      if (req.method === "POST" && (m = u.pathname.match(/^\/api\/mark\/([\w-]+)\/([\w-]+)$/))) {
         if (!lib.STATUSES.includes(m[2])) return send(res, 400, { error: "bad status" });
         return send(res, 200, lib.updateJob(cfg, m[1], { status: m[2], ...(m[2] === "applied" ? { appliedAt: Date.now() } : {}) }));
       }

@@ -65,6 +65,8 @@ server.listen(0, "127.0.0.1", async () => {
     assert.strictEqual(list.length, 2);
     const add = await (await fetch(pb + "/api/add", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: "https://example.com/careers/1" }) })).json();
     assert.ok(add.added);
+    const q = await (await fetch(`${pb}/api/mark/${skipped.id}/awaiting-approval`, { method: "POST", headers: { origin: pb } })).json();
+    assert.strictEqual(q.status, "awaiting-approval");
     const dl = await fetch(`${pb}/files/${ready.id}/${path.basename(ready.files.cv)}`);
     assert.strictEqual(dl.status, 200);
     assert.strictEqual((await fetch(`${pb}/files/${ready.id}/..%2F..%2Fprofile.json`)).status, 404);

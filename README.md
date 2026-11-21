@@ -2,25 +2,30 @@
 
 Turn job links into tailored application packs. For each link it reads the advert, checks the role suits you and doesn't rule out your work rights, then writes a CV and cover letter (.docx, A4) using **only facts from your own profile**. It keeps a tracked list of every job.
 
-You can use it in two ways:
+You can use it in three ways:
 
-| | Claude skill | Standalone tool |
-|---|---|---|
-| What you need | A Claude account with skills enabled | Node 18+ and an Anthropic API key |
-| Claude login | Yes | **No.** It calls the Anthropic API directly |
-| How you use it | Paste links in chat: "build my application pack" | `send-me-a-job add <url>` then `send-me-a-job run`, or the local web portal |
-| Filling in forms | Yes, with your final yes before every submit | No. You submit the forms yourself |
+| | In the Claude app | Hands-off on your computer | Standalone (no Claude login) |
+|---|---|---|---|
+| What you need | Claude (web, desktop or mobile) with skills | Claude **desktop app**, open on a computer that stays awake | Node 18+ and an Anthropic API key |
+| Builds CV + cover letter | Yes | Yes | Yes |
+| Fills in application forms | Yes, in the desktop app's built-in browser while you watch | Yes, while you're away | No (you submit yourself) |
+| When it needs you | Asks in the chat | **Sends a notification**; you answer or approve from the Claude app on any device | — |
+| Submits | Only after your yes | Only after you reply "submit <company>" | Never |
 
-Your personal details never go in this repository. `profile.json`, `config.json`, `data/` and `out/` are git-ignored and stay on your computer.
+Your personal details never go in this repository. `profile.json`, `config.json`, `data/` and `out/` are git-ignored and stay on your computer. All three ways share the same data folder, so you can build packs with the command-line tool and apply with the Claude app.
 
 ---
 
-## 1. Install as a Claude skill
+## 1. Use it in the Claude app
 
 1. Download **[`dist/send-me-a-job-skill.zip`](dist/send-me-a-job-skill.zip)**, or build it yourself with `npm run package-skill`.
 2. In Claude, open **Settings → Capabilities → Skills**, choose **Upload skill** and pick the zip. In Claude Code, unzip it into `~/.claude/skills/` instead.
-3. Start a chat: *"Set up send-me-a-job. Here's my CV."* Claude builds your `profile.json` with you, asking for your target country, your work-rights sentence and the job tracks you want.
-4. From then on, paste a link: *"Build my application pack for this job: https://…"*. To apply: *"Apply to my ready jobs."*
+3. In the **Claude desktop app**, open a chat and click **+ → Add folder** to connect a folder for your job hunt (e.g. `~/job-hunt`). Your profile, job list and documents live there.
+4. Say: *"Set up send-me-a-job. Here's my CV."* Claude builds your `profile.json` with you, asking for your target country, your work-rights sentence and the job tracks you want.
+5. Paste a link: *"Build my application pack for this job: https://…"*
+6. To apply while you watch: *"Apply to my ready jobs."* Claude opens each application in the app's **built-in browser**, fills it in from your profile and pack, shows you everything, and clicks Submit only after your yes.
+
+The skill also works in Claude on the web or mobile for building packs. Filling in forms needs the desktop app, or Claude in Chrome.
 
 Skill contents (`skill/send-me-a-job/`):
 
@@ -29,11 +34,33 @@ SKILL.md                     workflow: profile → collect links → build packs
 scripts/make_docs.js         renders the CV and cover letter (.docx) from a spec
 templates/profile.example.json
 templates/spec.example.json
-references/apply.md          how to fill in employer forms safely
-references/automation.md     scheduled runs and the public link form
+references/apply.md          filling in employer forms safely (live)
+references/hands-off.md      applying while you're away, with notifications
+references/automation.md     scheduled pack-building and the public link form
 ```
 
-## 2. Run it without Claude (command-line tool + local portal)
+## 2. Hands-off: let it apply while you're away
+
+Start it, leave your computer, and approve from your phone.
+
+**One-time setup** (Claude walks you through it when you say *"Set up hands-off applying"*):
+
+1. **Keep the Claude desktop app open and signed in** on your computer, with your job-hunt folder connected.
+2. **Sign in once to your job sites in the built-in browser** (open it with Cmd/Ctrl+Shift+B): LinkedIn, plus any application portals such as Workday, Greenhouse or cvMail. Sign-ins are remembered, and Claude never types your passwords.
+3. **Keep the computer awake and plugged in.** The screen may turn off, but the computer must not sleep.
+   - macOS: run `caffeinate -dimsu` in Terminal, or turn on System Settings → Battery → Options → "Prevent automatic sleeping on power adapter when the display is off".
+   - Windows: Settings → System → Power → "When plugged in, put my device to sleep after: Never".
+4. **Turn on notifications** for the Claude app on your phone.
+5. Claude creates a scheduled task, **"Send me a job: hands-off apply"**, that runs on your computer (e.g. every 2 hours).
+
+**Day to day:**
+
+- Queue the jobs you want to apply to. Say *"apply to these while I'm away"*, click **Queue for applying** in the local portal, or run `send-me-a-job mark <id> queued`.
+- Each run opens every queued application in the built-in browser, fills it in and **stops before Submit**.
+- When it needs you, you get a notification, for example *"Acme – Analyst is filled in. Reply 'submit Acme' to send it."* or *"Acme needs 2 answers: notice period, salary."* Tap it and reply in that conversation from anywhere. Claude then submits, or carries on with your answers.
+- Things only you can do (signing in, CAPTCHAs, creating accounts, paying fees) are flagged to you and never done for you.
+
+## 3. Run it without Claude (command-line tool + local portal)
 
 ```bash
 git clone https://github.com/<you>/send-me-a-job.git
@@ -53,7 +80,7 @@ send-me-a-job list
 
 Each pack goes into `out/<job id>/` and contains `<Name>_<Company>_<Role>_CV.docx`, `…_Cover_Letter.docx` and `pack.md`. `pack.md` lists the role, closing date, apply link, why it fits, visa sponsorship, gaps and suggested screening answers.
 
-**Local portal:** `send-me-a-job serve` opens a page at `http://127.0.0.1:4321`. There you can paste links, build packs, download the documents and mark jobs as applied. It listens only on your own computer.
+**Local portal:** `send-me-a-job serve` opens a page at `http://127.0.0.1:4321`. There you can paste links, build packs, download the documents, queue jobs for hands-off applying and mark them as applied. It also shows which jobs are waiting for your answers or approval. It listens only on your own computer.
 
 **Run daily:** add a cron job (or a Windows Task Scheduler task):
 
@@ -73,14 +100,14 @@ Each pack goes into `out/<job id>/` and contains `<Name>_<Company>_<Role>_CV.doc
 | `build [id …]` | Build packs for new jobs, or for the ids given |
 | `run` | `pull` (if configured), then `build`. Use this from cron |
 | `list [--status ready]` | Show jobs and their status |
-| `mark <id> <status>` | Set a status: `new`, `preparing`, `ready`, `applied`, `skipped` |
+| `mark <id> <status>` | Set a status: `new`, `ready`, `queued` (for hands-off applying), `applied`, `skipped`, … |
 | `render <spec.json> [dir]` | Render a CV and letter from a spec, with no API call |
 | `serve [--port 4321]` | Local web portal |
 | `package-skill` | Build `dist/send-me-a-job-skill.zip` |
 
 Environment variables: `ANTHROPIC_API_KEY` (required to build), `ANTHROPIC_MODEL` (optional, default `claude-sonnet-5-5`), `ANTHROPIC_BASE_URL` (optional), `NETLIFY_TOKEN` (optional).
 
-## 3. Let friends send you jobs (optional)
+## 4. Let friends send you jobs (optional)
 
 `public-form/` is a static page with a Netlify form. Friends paste a link and choose *Legal* or *Non-legal*. No sign-in is needed.
 
@@ -96,13 +123,16 @@ links ─┬─ CLI `add` / local portal
        └─ Claude chat (skill)
              │
              ▼
-   data/jobs.json  (status: new → preparing → ready → applied | skipped)
+   data/jobs.json  (new → preparing → ready → queued → awaiting-approval → applied; or skipped / needs-info)
              │
    build: fetch advert → Claude tailors a spec from profile.json + advert
              │          (skips closed roles, missing qualifications,
              │           sponsorship refusals when you need sponsorship)
              ▼
    make_docs.js → CV.docx + Cover_Letter.docx + pack.md  in out/<id>/
+             │
+   apply (Claude desktop app, built-in browser): fill form → stop before Submit
+             → notify you → submit only after "submit <company>"
 ```
 
 Code map:
@@ -119,7 +149,8 @@ Code map:
 - Only facts from `profile.json` are used. It never invents numbers, dates, grades or qualifications, and anything in `notForCV` stays out.
 - Your work-rights sentence (e.g. *"I will require visa sponsorship to work in the UK."*) is used word for word. If you need sponsorship, roles that refuse it are skipped.
 - Advert and form text is treated as data, never as instructions.
-- Nothing is submitted, emailed or paid for automatically. The skill asks for your yes before every submit. The CLI never submits at all.
+- Nothing is submitted, emailed or paid for automatically. The skill asks for your yes before every submit, including in hands-off mode. The CLI never submits at all.
+- Claude never types your passwords, creates accounts, solves CAPTCHAs or pays fees. Those are flagged to you.
 
 ## License
 

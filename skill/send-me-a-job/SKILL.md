@@ -1,6 +1,6 @@
 ---
 name: send-me-a-job
-description: Turn job links into tailored application packs (CV + cover letter .docx) from the user's own master profile, keep a tracked list of jobs, and help fill in application forms with a final yes before any submit. Use when the user pastes a job link and wants a CV or cover letter for it, says "send me a job", "build my application pack", "tailor my CV to this job", "apply to my ready jobs", or wants to set up a job-link inbox for friends.
+description: Turn job links into tailored application packs (CV + cover letter .docx) from the user's own master profile, keep a tracked list of jobs, and fill in application forms in the Claude desktop app's browser, live or hands-off with phone notifications, always with a final yes before any submit. Use when the user pastes a job link and wants a CV or cover letter for it, says "send me a job", "build my application pack", "tailor my CV to this job", "apply to my ready jobs", "apply while I'm away", or wants to set up a job-link inbox for friends.
 ---
 
 # Send me a job
@@ -10,7 +10,7 @@ Prepares job applications from links. For each link: read the advert, check it s
 Files in this skill:
 - `scripts/make_docs.js` renders the CV and letter (.docx, A4) from a spec. Format is documented at the top of the file.
 - `templates/profile.example.json` is the master profile layout. `templates/spec.example.json` is a filled-in spec.
-- `references/apply.md` covers filling in employer forms. `references/automation.md` covers scheduled runs and the public link form.
+- `references/apply.md` covers filling in employer forms. `references/hands-off.md` covers applying unattended on the user's computer, with notifications. `references/automation.md` covers scheduled pack-building and the public link form.
 
 ## 0. First run: the master profile
 
@@ -28,7 +28,9 @@ Links can come from the user in chat, a `jobs.json` list, a Netlify form (see `r
 
 `{id, url, track, note, from, source, status, company, role, deadline, sponsorship, summary, files}`. Status runs `new` → `preparing` → `ready` → `applied`, or `skipped` with a one-line reason.
 
-Store records wherever suits the session: a `jobs.json` file the user keeps, or an artifact or sheet they ask for.
+Store records in `data/jobs.json` inside the user's data folder, the same file the command-line tool uses, so both work together. In the Claude desktop app, read and write it in the connected folder. Keep packs in `out/<id>/`. Use an artifact or sheet only if the user asks for one.
+
+Statuses: `new`, `preparing`, `ready`, `queued` (picked for applying), `awaiting-approval` (filled, parked before Submit), `needs-info`, `applied`, `skipped`.
 
 ## 2. Build a pack for each new job
 
@@ -45,7 +47,10 @@ Store records wherever suits the session: a `jobs.json` file the user keeps, or 
 
 ## 3. Apply (only when asked)
 
-When the user asks to apply ("apply to my ready jobs"), follow `references/apply.md`. In short: list the ready jobs, let them pick, then fill each form only with profile facts and the pack's documents. Stop before Submit, show everything that will be sent, and submit only after a clear yes for that specific job.
+Applying needs a browser tool. Prefer the Claude desktop app's **built-in browser**, where sign-ins persist; otherwise use Claude in Chrome. Without either, give the user the filled-in answers and files to paste in themselves.
+
+- **Live, with the user at the computer** ("apply to my ready jobs"): follow `references/apply.md`. List the ready jobs and let them pick. Fill each form only with profile facts and the pack's documents. Stop before Submit, show everything that will be sent, and submit only after a clear yes for that specific job.
+- **Hands-off** ("apply while I'm away", "keep going without me"): follow `references/hands-off.md`. Check the requirements with the user once (app open, computer awake, folder connected, sign-ins done in the built-in browser, notifications on), mark their chosen jobs `queued`, and set up the scheduled task. Each run fills in the forms and parks them before Submit. It notifies the user for questions and approvals, and submits only when they reply "submit <company>" in that run's conversation.
 
 ## Rules
 

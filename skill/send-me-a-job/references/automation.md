@@ -16,5 +16,7 @@ If the session can create scheduled tasks, offer a daily task whose prompt is se
 
 The task must never submit, send email, or contact employers. It only prepares packs (and drafts, if a mail connector is used).
 
+To also fill in forms while the user is away, set up the separate hands-off apply task in `references/hands-off.md`. It runs on the user's computer and only submits after their reply.
+
 ## C. Without Claude: the command-line tool
 The repository's CLI does the same pack-building with only an Anthropic API key. No Claude account sign-in is needed. See the repository README (`send-me-a-job run` from cron, `send-me-a-job serve` for a local portal).
