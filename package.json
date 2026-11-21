@@ -1,0 +1,14 @@
+{
+  "name": "send-me-a-job",
+  "version": "1.0.0",
+  "description": "Collect job links, tailor a CV and cover letter for each with Claude, and track applications. Works as a Claude skill or as a standalone command-line tool.",
+  "license": "MIT",
+  "bin": { "send-me-a-job": "cli/index.js" },
+  "scripts": {
+    "start": "node cli/index.js serve",
+    "package-skill": "node cli/index.js package-skill",
+    "test": "node cli/test.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": { "docx": "^9.0.0" }
+}

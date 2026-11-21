@@ -1,0 +1,45 @@
+{
+  "_comment": "Your master profile. The tool only ever uses facts written here. Copy to profile.json and replace every example value with your own. Leave a field empty rather than guessing.",
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "phone": "",
+  "location": "Manchester, United Kingdom",
+  "linkedin": "linkedin.com/in/example",
+  "targetCountry": "United Kingdom",
+  "language": "UK English",
+  "workRights": "I will require visa sponsorship to work in the UK.",
+  "needsSponsorship": true,
+  "tracks": {
+    "legal": "Training contracts, vacation schemes, paralegal and other entry-level legal roles. Position as an aspiring solicitor; put education first.",
+    "business": "Business development, marketing and commercial roles. Position as a commercial professional with a law degree."
+  },
+  "positioning": "Commercial professional with a law degree and experience running small businesses.",
+  "experience": [
+    {
+      "title": "Founder",
+      "company": "Example Studio",
+      "dates": "Jan 2020 – Present",
+      "location": "Remote",
+      "bullets": [
+        "Founded and run a small web design business serving local companies",
+        "Manage client relationships, proposals and project timelines end to end"
+      ]
+    },
+    {
+      "title": "Marketing Assistant",
+      "company": "Example Travel Ltd",
+      "dates": "Sep 2018 – Dec 2019",
+      "location": "Leeds, UK",
+      "bullets": [
+        "Ran paid search and social campaigns and reported on results",
+        "Wrote copy for ads, email and the website"
+      ]
+    }
+  ],
+  "education": [
+    { "degree": "LLB (Hons) Law, 2:1", "school": "Example University", "dates": "2015 – 2018" }
+  ],
+  "certifications": ["Google Ads Search Certification (2022)"],
+  "skills": ["Business development", "Digital marketing", "Copywriting", "Client relationships", "Commercial awareness"],
+  "notForCV": ["Anything listed here may be known to you but must never appear in a CV or letter."]
+}

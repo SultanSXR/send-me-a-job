@@ -1,0 +1,9 @@
+node_modules/
+# Your personal data stays on your computer
+profile.json
+config.json
+data/
+out/
+*.docx
+*.pdf
+.env

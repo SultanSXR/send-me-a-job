@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Send me a job</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f7f4ee;--card:#fffdf9;--ink:#1f1d1a;--muted:#6d675e;--line:#e6dfd3;--accent:#1d4d4f;--accent-ink:#fff;--err:#b3261e;--gold:#a8792a;--ok:#1f6b3b}
+  @media (prefers-color-scheme: dark){:root{--bg:#151413;--card:#1e1c1a;--ink:#f1ede6;--muted:#a49d92;--line:#34302b;--accent:#5fa3a5;--accent-ink:#0f1414;--err:#f2b8b5;--gold:#d3a557;--ok:#8fd3a6}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+  .wrap{max-width:640px;margin:0 auto;padding:48px 16px 80px}
+  h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:34px;margin:0 0 8px;letter-spacing:-.01em}
+  h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:22px;margin:40px 0 4px}
+  .lead{color:var(--muted);margin:0 0 28px}
+  .sub{color:var(--muted);margin:0 0 14px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+  form{display:grid;gap:16px}
+  label,.lbl{font-weight:500;font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+  input[type=url],input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
+  textarea{min-height:72px;resize:vertical}
+  input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg label{margin:0;cursor:pointer;color:var(--ink);position:relative}
+  .seg input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+  .seg span{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);font-weight:600;font-size:14px}
+  .seg small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+  .seg input:checked + span{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--card)}
+  .seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+  @media (max-width:520px){.seg{grid-template-columns:1fr}}
+  button{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);border:0;border-radius:9px;padding:11px 20px;cursor:pointer;justify-self:start}
+  button:disabled{opacity:.55;cursor:default}
+  .hidden{position:absolute;left:-9999px}
+  .msg{font-size:13px;color:var(--err);min-height:1em}
+  .thanks{font-size:13px;color:var(--ok);min-height:0;margin:0 0 10px}
+  .foot{font-size:13px;color:var(--muted);margin-top:28px}
+  ul.sug{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+  .s{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;padding:14px 16px;display:grid;gap:6px;transition:opacity .35s ease,transform .35s ease}
+  .s.out{opacity:0;transform:translateX(12px)}
+  .s .t{font-weight:600;font-size:16px;word-break:break-word}
+  .s .t a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line)}
+  .s .m{font-size:13px;color:var(--muted)}
+  .s .w{font-size:14px}
+  .tag{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
+  .tag.legal{border-color:var(--gold);color:var(--gold)}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:2px}
+  .row button{padding:7px 14px;font-size:13px}
+  .row .bad{font-size:13px;color:var(--err)}
+  .empty{color:var(--muted);text-align:center;padding:24px;border:1px dashed var(--line);border-radius:12px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="h1">Send me a job</h1>
+  <p class="lead">Seen a role that would suit <span class="who">me</span>? Paste the link below. It can be a LinkedIn job or a company's careers page. A tailored CV and cover letter will be prepared for it. No sign-in needed.</p>
+
+  <section class="card">
+    <form action='/thank-you' id='f' method='POST' name='job-links' data-netlify="true" netlify-honeypot="bot-field">
+      <input type="hidden" name="form-name" value="job-links">
+      <p class="hidden"><label>Don't fill this out: <input name="bot-field"></label></p>
+      <div>
+        <label for="url">Job link</label>
+        <input id="url" name="url" type="url" required placeholder="https://www.linkedin.com/jobs/view/… or https://careers.company.com/…">
+      </div>
+      <div>
+        <span class="lbl" id="trackLbl">Type of job</span>
+        <div class="seg" role="radiogroup" aria-labelledby="trackLbl">
+          <label><input type="radio" name="track" value="legal" required><span>Legal<small>Training contracts, fellowships, paralegal, legal assistant</small></span></label>
+          <label><input type="radio" name="track" value="business"><span>Non-legal<small>Business development, marketing, hospitality, commercial</small></span></label>
+        </div>
+      </div>
+      <div>
+        <label for="name">Your name (optional)</label>
+        <input id="name" name="name" type="text" autocomplete="name" placeholder="So they know who to thank">
+      </div>
+      <div>
+        <label for="note">Note (optional)</label>
+        <textarea id="note" name="note" placeholder="Why it's a good fit, who you know there, the closing date…"></textarea>
+      </div>
+      <button type="submit">Send job</button>
+      <div class="msg" id="msg" role="status"></div>
+    </form>
+  </section>
+
+  <h2 id="sugH">Suggested roles</h2>
+  <p class="sub" id="sugSub">Roles like the ones <span class="who">I</span> am going for. Know someone there, or think it's a strong fit? Recommend it, and a new suggestion takes its place.</p>
+  <p class="thanks" id="thanks" role="status"></p>
+  <ul class="sug" id="sug"><li class="empty">Loading…</li></ul>
+
+  <p class="foot">Links are only used to prepare job applications.</p>
+</div>
+<script>
+// ---- Settings: edit these two lines before deploying ----
+const OWNER = "";   // first name shown on the page, e.g. "Sam". Empty = "me".
+const FEED = "";    // optional published Google Sheet: https://docs.google.com/spreadsheets/d/<ID>/gviz/tq?tqx=out:json&sheet=Live&headers=1
+// ----------------------------------------------------------
+const SHOW = 5, SEEN_KEY = "smjRecommended";
+if (OWNER) {
+  document.title = "Send " + OWNER + " a job";
+  document.getElementById("h1").textContent = "Send " + OWNER + " a job";
+  document.getElementById("sugH").textContent = "Suggested for " + OWNER;
+  document.querySelectorAll(".who").forEach(e => e.textContent = OWNER);
+  document.querySelector("#sugSub").innerHTML = document.querySelector("#sugSub").innerHTML.replace(" am going", " is going");
+}
+
+document.getElementById("f").addEventListener("submit", e => {
+  const url = document.getElementById("url").value.trim(), msg = document.getElementById("msg");
+  let ok = false; try { const u = new URL(url); ok = u.protocol === "https:" || u.protocol === "http:"; } catch (_) {}
+  if (!ok) { e.preventDefault(); msg.textContent = "Please paste a full link starting with https://"; return; }
+  if (!document.querySelector('input[name="track"]:checked')) { e.preventDefault(); msg.textContent = "Please choose Legal or Non-legal."; }
+});
+
+function el(tag, props, ...kids){ const e=document.createElement(tag); for(const [k,v] of Object.entries(props||{})){ if(k==="class") e.className=v; else if(k==="text") e.textContent=v; else e.setAttribute(k,v);} kids.forEach(k=>k&&e.append(k)); return e; }
+function safeUrl(u){ try{ const x=new URL(u); return (x.protocol==="https:"||x.protocol==="http:")?x.href:null; }catch(_){ return null; } }
+function norm(u){ try{ const x=new URL(u); return (x.hostname.replace(/^www\./i,"")+x.pathname.replace(/\/+$/,"")).toLowerCase(); }catch(_){ return String(u||"").toLowerCase(); } }
+function loadSeen(){ try{ return new Set(JSON.parse(localStorage.getItem(SEEN_KEY)||"[]")); }catch(_){ return new Set(); } }
+function saveSeen(){ try{ localStorage.setItem(SEEN_KEY, JSON.stringify([...seen].slice(-100))); }catch(_){} }
+
+const seen = loadSeen();   // roles this visitor has already recommended
+let items = [];
+
+async function recommend(item, btn, out, li){
+  btn.disabled=true; out.className=""; out.textContent="Sending…";
+  const name=document.getElementById("name").value.trim();
+  const body=new URLSearchParams({"form-name":"job-links", url:item.url, track:item.track==="legal"?"legal":"business", name, note:("Recommended from suggested roles"+(name?" by "+name:"")).slice(0,200)});
+  try{
+    const r=await fetch("/", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:body.toString()});
+    if(!r.ok) throw new Error(r.status);
+    seen.add(norm(item.url)); saveSeen();
+    document.getElementById("thanks").textContent=`Thanks! ${OWNER||"They"} will see you recommended ${item.role||"this role"} at ${item.company||"this employer"}.`;
+    li.classList.add("out");
+    setTimeout(render, 380);   // drop it and pull in the next suggestion
+  }catch(_){ out.className="bad"; out.textContent="Couldn't send that. Please try again."; btn.disabled=false; }
+}
+
+function render(){
+  const list=document.getElementById("sug"); list.textContent="";
+  const shown=items.filter(it=>!seen.has(norm(it.url))).slice(0,SHOW);
+  for(const it of shown){
+    const out=el("span",{role:"status"});
+    const btn=el("button",{type:"button",text:"Recommend"});
+    const li=el("li",{class:"s"},
+      el("div",{class:"t"}, el("a",{href:it.url,target:"_blank",rel:"noopener",text:`${it.role||"Role"} · ${it.company||""}`})),
+      el("div",{class:"m"}, el("span",{class:"tag"+(it.track==="legal"?" legal":""),text:it.track==="legal"?"Legal":"Non-legal"}), document.createTextNode([it.location, it.deadline?"Closes "+it.deadline:""].filter(Boolean).join(" · "))),
+      it.why?el("div",{class:"w",text:it.why}):null,
+      el("div",{class:"row"}, btn, out));
+    btn.onclick=()=>recommend(it,btn,out,li);
+    list.append(li);
+  }
+  if(shown.length<SHOW) list.append(el("li",{class:"empty",text: shown.length ? "Claude is finding another match to fill this spot." : "Claude is finding new matches. Check back soon."}));
+}
+
+async function load(){
+  try{
+    const txt=await fetch(FEED,{cache:"no-store"}).then(r=>{ if(!r.ok) throw 0; return r.text(); });
+    const j=JSON.parse(txt.slice(txt.indexOf("{"), txt.lastIndexOf("}")+1));
+    if(j.status==="error") throw 0;
+    const cols=(j.table.cols||[]).map(c=>String(c.label||c.id||"").trim().toLowerCase());
+    items=(j.table.rows||[]).map(r=>{ const o={}; cols.forEach((k,i)=>{ const c=r.c&&r.c[i]; o[k]=c?(c.f!=null?String(c.f):(c.v!=null?String(c.v):"")):""; }); return o; })
+      .map(o=>({...o, url:safeUrl(o.url)})).filter(o=>o.url&&(o.company||o.role));
+    render();
+  }catch(_){ if(!items.length){ const list=document.getElementById("sug"); list.textContent=""; list.append(el("li",{class:"empty",text:"Suggestions aren't available right now."})); } }
+}
+if (FEED) { load(); setInterval(load, 60000); }
+else { ["sugH","sugSub","thanks","sug"].forEach(id => document.getElementById(id).hidden = true); }   // pick up replacements while the page is open
+</script>
+</body>
+</html>

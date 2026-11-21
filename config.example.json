@@ -1,0 +1,13 @@
+{
+  "_comment": "Copy to config.json (or run `send-me-a-job init`). Secrets go in environment variables, never in this file.",
+  "profile": "profile.json",
+  "dataDir": "data",
+  "outputDir": "out",
+  "model": "claude-sonnet-5-5",
+  "maxJobsPerRun": 8,
+  "netlify": {
+    "_comment": "Optional: pull links from a Netlify form (see public-form/). Needs NETLIFY_TOKEN in the environment.",
+    "formId": ""
+  },
+  "port": 4321
+}
