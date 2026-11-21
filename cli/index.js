@@ -40,7 +40,8 @@ function flags(args) {
 async function buildMany(cfg, ids) {
   const profile = lib.loadProfile(cfg);
   let jobs = lib.readJobs(cfg);
-  jobs = ids.length ? jobs.filter(j => ids.includes(j.id)) : jobs.filter(j => j.status === "new").slice(0, cfg.maxJobsPerRun);
+  jobs = ids.length ? jobs.filter(j => ids.includes(j.id)) : jobs.filter(j => j.status === "new");
+  if (cfg.maxJobsPerRun > 0) jobs = jobs.slice(0, cfg.maxJobsPerRun); // 0 or unset = no limit
   if (!jobs.length) { console.log("No new jobs to build."); return; }
   console.log(`Building ${jobs.length} pack(s)…`);
   for (const j of jobs) await lib.buildJob(cfg, profile, j);

@@ -28,7 +28,7 @@ Links can come from the user in chat, a `jobs.json` list, a Netlify form (see `r
 
 `{id, url, track, note, from, source, status, company, role, deadline, sponsorship, summary, files}`. Status runs `new` → `preparing` → `ready` → `applied`, or `skipped` with a one-line reason.
 
-Store records in `data/jobs.json` inside the user's data folder, the same file the command-line tool uses, so both work together. In the Claude desktop app, read and write it in the connected folder. Keep packs in `out/<id>/`. Use an artifact or sheet only if the user asks for one.
+Store records in `data/jobs.json` inside the user's data folder, the same file the command-line tool uses, so both work together. In the Claude desktop app, read and write it in the connected folder. Keep packs in `out/<id>/`, or, when a Google Drive connector is available and the user wants it, in one dedicated Drive folder with a subfolder per job (see `references/automation.md`: no duplicates, nothing outside that folder). Use an artifact or sheet only if the user asks for one.
 
 Statuses: `new`, `preparing`, `ready`, `queued` (picked for applying), `awaiting-approval` (filled, parked before Submit), `needs-info`, `applied`, `skipped`, and for suggestions `suggested`, `dismissed`, `replaced`.
 

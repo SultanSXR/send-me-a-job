@@ -22,7 +22,7 @@ It never submits without the user's explicit yes for that specific job.
 `ready` (pack built) → `queued` (user picked it for applying) → `awaiting-approval` (form filled, parked before Submit) → `applied`.
 A job that needs the user goes to `needs-info`, with `questions` and `blocker` fields. The user's answers go into `answers` and the job returns to `queued`.
 
-The user queues jobs by saying "apply to these" in chat, with the portal's **Queue** button, or with `send-me-a-job mark <id> queued`.
+The user queues jobs by saying "apply to these" in chat, with the portal's **Apply** button (choose "Apply now" or "Add to the queue"), or with `send-me-a-job mark <id> queued`.
 
 ## Setting up the scheduled task
 

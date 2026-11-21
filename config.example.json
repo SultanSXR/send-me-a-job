@@ -4,7 +4,7 @@
   "dataDir": "data",
   "outputDir": "out",
   "model": "claude-sonnet-5-5",
-  "maxJobsPerRun": 8,
+  "maxJobsPerRun": 0,
   "scoreOnBuild": true,
   "maxScoresPerRun": 6,
   "researchSearches": 8,

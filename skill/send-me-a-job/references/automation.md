@@ -7,14 +7,25 @@ The repository's `public-form/index.html` is a static page that friends can use 
 
 To read submissions: through a Netlify connector if the session has one (form submissions, read only), or with the Netlify API `GET /api/v1/forms/<formId>/submissions`. Each submission's `data` has `url`, `track`, `name` and `note`. Never delete submissions.
 
-## B. Daily run as a scheduled task (inside Claude)
-If the session can create scheduled tasks, offer a daily task whose prompt is self-contained (each run starts fresh):
+## B. Scheduled pack runs (inside Claude)
+If the session can create scheduled tasks, offer a pack task whose prompt is self-contained (each run starts fresh). Ask how often; twice a day (morning and early evening) works well. There is no per-run limit by default: each run builds every `new` or queued job, unless the user asks for a cap.
 1. Gather new links from the agreed sources (form, mail with a subject like "Job", the jobs list).
-2. Build packs for up to 8 `new` jobs, following SKILL.md section 2.
+2. Build packs for every `new` job (and every job the user queued with "Add to the queue"), following SKILL.md section 2.
 3. Estimate chances for open jobs that have no recent estimate, and add suggestions with the best chances, following `references/chance.md`. Record them as suggestions, never as applications. Refresh the advice list.
 4. End with a short summary: packs ready, jobs skipped and why, links that need the user.
 
-The task must never submit, send email, or contact employers. It only prepares packs (and drafts, if a mail connector is used).
+The task must never submit, send email, or contact employers. It only prepares packs.
+
+### Where packs are stored
+- **Local folder** (default): `out/<id>/`.
+- **Google Drive** (when a Drive connector is attached to the task): keep everything in **one dedicated folder** (e.g. "Job Portal"), with one subfolder per job named `<Company> – <Role>`. Upload the CV, the cover letter and a short pack-notes doc there, and record `driveFolderId`, `driveUrl`, `cvFileId` and `letterFileId` on the job. Before creating anything, search the folder: reuse an existing subfolder for the same job and replace its files rather than adding copies, so there are never duplicates. Never create files outside the dedicated folder and never move the user's own files.
+- Email drafts are no longer needed; prefer Drive or the local folder.
+
+### "Apply now" or "Add to the queue"
+When the user clicks **Apply** on a job, ask which they want:
+- **Apply now**: build the pack straight away (if it isn't ready) and start applying, following `references/apply.md` (or the hands-off task).
+- **Add to the queue**: leave the job for the next scheduled pack run; it is queued for applying once its pack is ready.
+A portal can do this by firing a separate on-demand task (with a flag such as `applyNow: true` on the job) for "Apply now".
 
 To also fill in forms while the user is away, set up the separate hands-off apply task in `references/hands-off.md`. It runs on the user's computer and only submits after their reply.
 

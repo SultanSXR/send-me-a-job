@@ -82,12 +82,12 @@ send-me-a-job list
 
 Each pack goes into `out/<job id>/` and contains `<Name>_<Company>_<Role>_CV.docx`, `…_Cover_Letter.docx` and `pack.md`. `pack.md` lists the role, closing date, apply link, why it fits, visa sponsorship, gaps and suggested screening answers.
 
-**Local portal:** `send-me-a-job serve` opens a page at `http://127.0.0.1:4321`. There you can paste links, build packs, download the documents, queue jobs for hands-off applying and mark them as applied. It also shows which jobs are waiting for your answers or approval. It listens only on your own computer.
+**Local portal:** `send-me-a-job serve` opens a page at `http://127.0.0.1:4321`. There you can paste links, click **Apply** (choose **Apply now** to build the pack and queue it straight away, or **Add to the queue** for the next scheduled run), build packs, download the documents, queue jobs for hands-off applying and mark them as applied. It also shows which jobs are waiting for your answers or approval. It listens only on your own computer.
 
-**Run daily:** add a cron job (or a Windows Task Scheduler task):
+**Run on a schedule:** add a cron job (or a Windows Task Scheduler task). This runs twice a day; every new job is built (set `maxJobsPerRun` in `config.json` to cap it):
 
 ```
-35 10 * * *  cd ~/job-hunt && ANTHROPIC_API_KEY=sk-ant-... /usr/local/bin/send-me-a-job run >> run.log 2>&1
+35 10,18 * * *  cd ~/job-hunt && ANTHROPIC_API_KEY=sk-ant-... /usr/local/bin/send-me-a-job run >> run.log 2>&1
 ```
 
 **Adverts that need a sign-in** (e.g. LinkedIn): copy the advert text into a file, then run `send-me-a-job add <url> --text advert.txt`.

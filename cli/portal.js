@@ -25,8 +25,8 @@ h2{font-size:18px;margin:28px 0 0}h2 small{font-weight:400;font-size:13px}
 .chance{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px}.chance summary{cursor:pointer}.pct{font-weight:700;padding:0 8px;border-radius:999px;border:1px solid var(--line)}
 .chance.hi .pct{border-color:#1f6b3b}.chance.lo .pct{opacity:.8}.chance ul{margin:4px 0;padding-left:18px}
 .advice summary{cursor:pointer;font-weight:600}.advice li{margin:6px 0}
-</style></head><body><div class="wrap">
-<h1>Send me a job</h1><p class="muted">Your jobs, stored on this computer in data/jobs.json. Packs are built with your Anthropic API key. Queued jobs are filled in by the Claude desktop app (hands-off mode).</p>
+dialog.choose{border:1px solid #ccc;border-radius:12px;padding:18px;max-width:420px}dialog.choose button{display:block;width:100%;text-align:left;margin:0 0 8px}dialog.choose small{display:block;font-weight:400;opacity:.8}</style></head><body><div class="wrap">
+<h1>Send me a job</h1><p class="muted">Your jobs, stored on this computer in data/jobs.json. Packs are built with your Anthropic API key. Click Apply to choose "Apply now" or "Add to the queue". Queued jobs are filled in by the Claude desktop app (hands-off mode).</p>
 <div class="card"><form id="add"><input name="url" type="url" required placeholder="Paste a job link"><select name="track"><option value="">Track: auto</option><option value="legal">Legal</option><option value="business">Business</option></select><button>Add</button></form><div id="msg" class="muted"></div></div>
 <div id="advice"></div>
 <h2>Suggested for you <small class="muted">best chance first</small></h2><div class="card" id="sugs">Loading…</div>
@@ -44,12 +44,22 @@ function chance(j){const c=j.chance;if(!c)return el("div",{class:"muted",text:"C
  if(c.basis)d.append(el("div",{class:"muted",text:"Starting point: "+c.basis}));
  const src=(c.sources||[]).filter(s=>safe(s.url));if(src.length)d.append(el("div",{class:"muted"},"Sources: ",src.map((s,i)=>[i?" · ":"",el("a",{href:s.url,target:"_blank",rel:"noopener",text:s.title||s.url})])));
  d.append(el("div",{class:"muted",text:"An estimate from public information, not a prediction. Private to this computer."}));return d}
+function choose(title,ready){return new Promise(res=>{const d=el("dialog",{class:"choose"});const fin=v=>{d.close();d.remove();res(v)};
+ const now=el("button",{type:"button"},"Apply now",el("small",{text:ready?"Queue it for applying straight away.":"Build the CV and cover letter now, then queue it for applying."}));
+ const later=el("button",{type:"button",class:"ghost"},ready?"Not now":"Add to the queue",el("small",{text:ready?"Keep the pack ready for later.":"The next scheduled run builds the pack."}));
+ const x=el("button",{type:"button",class:"ghost",text:"Cancel"});now.onclick=()=>fin("now");later.onclick=()=>fin(ready?null:"queue");x.onclick=()=>fin(null);d.addEventListener("cancel",e=>{e.preventDefault();fin(null)});
+ d.append(el("h3",{text:title}),el("p",{class:"muted",text:"How do you want to apply?"}),now,later,x);document.body.append(d);d.showModal()})}
+async function applyNow(j,b,mode){b.disabled=true;
+ if(j.status==="suggested"){await api("/api/mark/"+j.id+"/new",{method:"POST"});if(mode==="queue"){load();return}}
+ if(j.status!=="ready"){b.textContent="Building…";try{await api("/api/build/"+j.id,{method:"POST"})}catch(e){alert(e.message);load();return}}
+ const jj=(await api("/api/jobs")).find(x=>x.id===j.id);if(jj&&jj.status==="ready")await api("/api/mark/"+j.id+"/queued",{method:"POST"});load()}
+function applyBtn(row,j){const b=el("button",{text:"Apply"});b.onclick=async()=>{const m=await choose(j.company?j.company+" – "+j.role:j.url,j.status==="ready");if(m)applyNow(j,b,m)};row.append(b)}
 function mkBtn(row,j,label,st,ghost){const b=el("button",{class:ghost?"ghost":"",text:label});b.onclick=async()=>{b.disabled=true;await api("/api/mark/"+j.id+"/"+st,{method:"POST"});load()};row.append(b)}
 function item(j){const row=el("div",{class:"row"},el("span",{class:"pill",text:j.status}),el("span",{class:"pill",text:j.track||"track: auto"}));
- if(j.status==="suggested"){mkBtn(row,j,"Add to my jobs","new");mkBtn(row,j,"Not for me","dismissed",1)}
- if(j.status==="new"){const b=el("button",{text:"Build pack"});b.onclick=async()=>{b.disabled=true;b.textContent="Building…";try{await api("/api/build/"+j.id,{method:"POST"})}catch(e){alert(e.message)}load()};row.append(b)}
+ if(j.status==="suggested"){applyBtn(row,j);mkBtn(row,j,"Not for me","dismissed",1)}
+ if(j.status==="new"){applyBtn(row,j);const b=el("button",{class:"ghost",text:"Build pack only"});b.onclick=async()=>{b.disabled=true;b.textContent="Building…";try{await api("/api/build/"+j.id,{method:"POST"})}catch(e){alert(e.message)}load()};row.append(b)}
  if(j.files){for(const[k,v]of Object.entries(j.files))row.append(el("a",{href:"/files/"+j.id+"/"+v.split(/[\\\\/]/).pop(),text:k}))}
- if(j.status==="ready"){mkBtn(row,j,"Queue for applying","queued");mkBtn(row,j,"Mark applied","applied",1)}
+ if(j.status==="ready"){applyBtn(row,j);mkBtn(row,j,"Mark applied","applied",1)}
  if(j.status==="queued")mkBtn(row,j,"Unqueue","ready",1);
  if(["awaiting-approval","needs-info"].includes(j.status))mkBtn(row,j,"Mark applied","applied",1);
  const open=!["applied","skipped","dismissed","replaced"].includes(j.status);
