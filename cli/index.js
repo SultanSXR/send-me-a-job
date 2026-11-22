@@ -18,6 +18,11 @@ Usage:
   send-me-a-job score [id ...]           Estimate your chance of an offer for open jobs (private)
   send-me-a-job suggest [--count 5]      Find open roles with your best chances, ranked
   send-me-a-job advice                   Profile changes that would raise your chances
+  send-me-a-job growth [programmes|courses] [--duration 3m|6m|1y|1y+] [--count 5]
+                                         Find free mentorship/internship programmes and courses/certifications
+                                         linked to your jobs (3m = up to 3 months, 1y+ = over a year)
+  send-me-a-job growth list [--kind programmes|courses] [--duration 6m]
+  send-me-a-job growth mark <id> <status>  Status: ${lib.GROWTH_STATUSES.join(", ")}
   send-me-a-job mark <id> <status>       Set status: ${lib.STATUSES.join(", ")}
   send-me-a-job render <spec.json> [dir] Render a CV + letter from a spec, no API call
   send-me-a-job serve [--port 4321]      Open the local portal in your browser
@@ -84,7 +89,27 @@ async function main() {
       await buildMany(cfg, []);
       const profile = lib.loadProfile(cfg);
       await lib.scoreOpen(cfg, profile);
-      if (f.suggest) await lib.suggest(cfg, profile, cfg.suggestCount || 5);
+      if (f.suggest) {
+        await lib.suggest(cfg, profile, cfg.suggestCount || 5);
+        if (cfg.growthOnSuggest !== false) await lib.growth(cfg, profile); // programmes + courses alongside the suggested jobs
+      }
+      break;
+    }
+    case "growth": {
+      const [sub, a, b] = f._;
+      if (sub === "list") {
+        const keys = lib.durationKeys(f.duration);
+        const items = lib.readGrowth(cfg).items.filter(i => ["new", "saved", "done"].includes(i.status) && keys.includes(i.bucket) && (!f.kind || i.kind === f.kind));
+        if (!items.length) { console.log("Nothing yet. Run: send-me-a-job growth"); break; }
+        for (const i of items) console.log(`${i.id}  ${i.status.padEnd(5)} ${i.kind === "courses" ? "course   " : "programme"} ${i.type.padEnd(15)} ${(i.durationLabel || i.bucket).padEnd(14)} ${i.title} — ${i.provider}\n    ${i.url}`);
+        break;
+      }
+      if (sub === "mark") { const i = lib.markGrowth(cfg, a, b); console.log(`${i.id} → ${i.status}`); break; }
+      const kind = lib.GROWTH_KINDS.includes(sub) ? sub : undefined;
+      if (sub && !kind) throw new Error("Usage: send-me-a-job growth [programmes|courses] [--duration 3m|6m|1y|1y+] [--count N] | growth list | growth mark <id> <status>");
+      console.log("Researching programmes and courses linked to your jobs… (this can take a few minutes)");
+      const n = await lib.growth(cfg, lib.loadProfile(cfg), { kind, durations: f.duration ? lib.durationKeys(f.duration) : undefined, count: f.count });
+      console.log(`Added ${n} item(s). See them with: send-me-a-job growth list`);
       break;
     }
     case "score": await lib.scoreOpen(cfg, lib.loadProfile(cfg), f._); break;

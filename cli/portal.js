@@ -25,11 +25,16 @@ h2{font-size:18px;margin:28px 0 0}h2 small{font-weight:400;font-size:13px}
 .chance{border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px}.chance summary{cursor:pointer}.pct{font-weight:700;padding:0 8px;border-radius:999px;border:1px solid var(--line)}
 .chance.hi .pct{border-color:#1f6b3b}.chance.lo .pct{opacity:.8}.chance ul{margin:4px 0;padding-left:18px}
 .advice summary{cursor:pointer;font-weight:600}.advice li{margin:6px 0}
+.chip{background:transparent;color:var(--ink);border:1px solid var(--line);padding:4px 12px;font-weight:500}.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}h3{font-size:15px;margin:18px 0 0}.done{opacity:.6}
 dialog.choose{border:1px solid #ccc;border-radius:12px;padding:18px;max-width:420px}dialog.choose button{display:block;width:100%;text-align:left;margin:0 0 8px}dialog.choose small{display:block;font-weight:400;opacity:.8}</style></head><body><div class="wrap">
 <h1>Send me a job</h1><p class="muted">Your jobs, stored on this computer in data/jobs.json. Packs are built with your Anthropic API key. Click Apply to choose "Apply now" or "Add to the queue". Queued jobs are filled in by the Claude desktop app (hands-off mode).</p>
 <div class="card"><form id="add"><input name="url" type="url" required placeholder="Paste a job link"><select name="track"><option value="">Track: auto</option><option value="legal">Legal</option><option value="business">Business</option></select><button>Add</button></form><div id="msg" class="muted"></div></div>
 <div id="advice"></div>
 <h2>Suggested for you <small class="muted">best chance first</small></h2><div class="card" id="sugs">Loading…</div>
+<h2>Build your profile <small class="muted">free programmes, internships and courses linked to your jobs</small></h2>
+<div class="card"><div class="row" id="gfilter"></div><div class="row" style="margin-top:8px"><button id="gfind" class="ghost">Find more</button><span id="gmsg" class="muted"></span></div></div>
+<h3>Mentorship, internships &amp; work experience</h3><div class="card" id="gprog">Loading…</div>
+<h3>Free courses &amp; certifications</h3><div class="card" id="gcourse">Loading…</div>
 <h2>Your jobs</h2><div class="card" id="list">Loading…</div></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -75,7 +80,33 @@ async function load(){const jobs=await api("/api/jobs");const pct=j=>j.chance?j.
  if(!mine.length){L.append(el("p",{class:"muted",text:"No jobs yet. Paste a link above."}))}else mine.slice().reverse().forEach(j=>L.append(item(j)));
  const a=await api("/api/advice"),A=$("#advice");A.textContent="";
  if(a&&a.items&&a.items.length){const d=el("details",{class:"card advice"},el("summary",{text:"How to raise your chances ("+a.items.length+")"}));if(a.summary)d.append(el("p",{class:"muted",text:a.summary}));
-  d.append(el("ol",{},a.items.map(i=>el("li",{},el("b",{text:i.title})," — "+i.detail,i.why?el("div",{class:"muted",text:"Why: "+i.why}):null))));A.append(d)}}
+  d.append(el("ol",{},a.items.map(i=>el("li",{},el("b",{text:i.title})," — "+i.detail,i.why?el("div",{class:"muted",text:"Why: "+i.why}):null))));A.append(d)}
+ await loadGrowth(jobs)}
+
+let GF="all";const ORDER=["3m","6m","1y","1y+"];
+const DUR=[["all","Any length"],["3m","Up to 3 months"],["6m","Up to 6 months"],["1y","Up to 1 year"],["1y+","Over 1 year"]];
+const durKeys=k=>k==="all"?ORDER.slice():k==="1y+"?["1y+"]:ORDER.slice(0,ORDER.indexOf(k)+1);
+function gitem(g,jobs){const row=el("div",{class:"row"},el("span",{class:"pill",text:g.type}),el("span",{class:"pill",text:g.durationLabel||g.bucket}),el("span",{class:"pill",text:g.cost==="free"?"Free":"Free to learn"}));
+ if(g.deadline)row.append(el("span",{class:"pill",text:"Closes "+g.deadline}));
+ if(g.status==="saved")row.append(el("span",{class:"pill",text:"Saved"}));
+ if(g.status==="done")row.append(el("span",{class:"pill",text:"Done"}));
+ else{const mk=(label,st,ghost)=>{const b=el("button",{class:ghost?"ghost":"",text:label});b.onclick=async()=>{b.disabled=true;await api("/api/growth/mark/"+g.id+"/"+st,{method:"POST"});load()};row.append(b)};
+  if(g.status!=="saved")mk("Save","saved");mk(g.kind==="courses"?"Completed":"Done","done",1);mk("Not for me","dismissed",1)}
+ const rel=(g.relatesTo||[]).map(id=>jobs.find(j=>j.id===id)).filter(Boolean).map(j=>j.company?j.company+" – "+j.role:j.url);
+ const t=safe(g.url)?el("a",{href:g.url,target:"_blank",rel:"noopener",text:g.title}):el("span",{text:g.title});
+ return el("div",{class:"job"+(g.status==="done"?" done":"")},el("div",{class:"t"},t,g.provider?el("span",{class:"muted",text:" · "+g.provider}):null),
+  g.why?el("div",{class:"muted",text:g.why}):null,
+  rel.length?el("div",{class:"muted",text:"Helps with: "+rel.join(" · ")}):null,
+  g.kind==="courses"&&g.boosts?el("div",{class:"muted",text:"Boosts: "+(g.boosts==="both"?"your CV and interviews":g.boosts==="resume"?"your CV (add it once completed)":"interviews and hiring")}):null,
+  g.costNote?el("div",{class:"muted",text:g.costNote}):null,g.eligibility?el("div",{class:"muted",text:"Eligibility: "+g.eligibility}):null,row)}
+async function loadGrowth(jobs){const items=(await api("/api/growth")).items||[];const keys=durKeys(GF);
+ const F=$("#gfilter");F.textContent="";DUR.forEach(([k,l])=>{const c=el("button",{type:"button",class:"chip"+(GF===k?" on":""),text:l});c.onclick=()=>{GF=k;loadGrowth(jobs)};F.append(c)});
+ const rank={new:0,saved:0,done:1};
+ for(const[box,kind,none]of[["#gprog","programmes","No programmes yet."],["#gcourse","courses","No courses yet."]]){const B=$(box);B.textContent="";
+  const list=items.filter(i=>i.kind===kind&&i.status!=="dismissed"&&keys.includes(i.bucket)).sort((a,b)=>rank[a.status]-rank[b.status]);
+  if(!list.length)B.append(el("p",{class:"muted",text:none+" Press Find more, or run: send-me-a-job growth"}));list.forEach(g=>B.append(gitem(g,jobs)))}}
+$("#gfind").onclick=async()=>{const b=$("#gfind"),m=$("#gmsg");b.disabled=true;m.textContent="Researching… this can take a few minutes.";
+ try{const r=await api("/api/growth/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({durations:durKeys(GF)})});m.textContent="Added "+r.added+" new.";}catch(e){m.textContent=e.message}b.disabled=false;load()};
 $("#add").onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{const r=await api("/api/add",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(d)});$("#msg").textContent=r.added?"Added.":"Already in your list.";e.target.reset();load()}catch(x){$("#msg").textContent=x.message}};
 load();
 </script></body></html>`;
@@ -98,6 +129,14 @@ function serve(cfg, port) {
       if (req.method === "GET" && u.pathname === "/") return send(res, 200, PAGE, "text/html; charset=utf-8");
       if (req.method === "GET" && u.pathname === "/api/jobs") return send(res, 200, lib.readJobs(cfg).map(({ advertText, ...j }) => j));
       if (req.method === "GET" && u.pathname === "/api/advice") return send(res, 200, lib.readAdvice(cfg) || {});
+      if (req.method === "GET" && u.pathname === "/api/growth") return send(res, 200, lib.readGrowth(cfg));
+      if (req.method === "POST" && u.pathname === "/api/growth/run") {
+        const b = await readBody(req);
+        const durations = Array.isArray(b.durations) ? b.durations.filter(d => lib.DURATIONS.includes(d)) : undefined;
+        const before = lib.readGrowth(cfg).items.length;
+        await lib.growth(cfg, lib.loadProfile(cfg), { kind: lib.GROWTH_KINDS.includes(b.kind) ? b.kind : undefined, durations });
+        return send(res, 200, { added: lib.readGrowth(cfg).items.length - before });
+      }
       if (req.method === "POST" && u.pathname === "/api/add") { const b = await readBody(req); return send(res, 200, lib.addJob(cfg, { url: b.url, track: b.track, source: "portal" })); }
       let m;
       if (req.method === "POST" && (m = u.pathname.match(/^\/api\/build\/([\w-]+)$/))) {
@@ -110,6 +149,7 @@ function serve(cfg, port) {
         if (!lib.STATUSES.includes(m[2])) return send(res, 400, { error: "bad status" });
         return send(res, 200, lib.updateJob(cfg, m[1], { status: m[2], ...(m[2] === "applied" ? { appliedAt: Date.now() } : {}) }));
       }
+      if (req.method === "POST" && (m = u.pathname.match(/^\/api\/growth\/mark\/([\w-]+)\/([\w-]+)$/))) return send(res, 200, lib.markGrowth(cfg, m[1], m[2]));
       if (req.method === "GET" && (m = u.pathname.match(/^\/files\/([\w-]+)\/([\w.-]+)$/))) {
         const file = path.resolve(process.cwd(), cfg.outputDir, m[1], m[2]);
         if (!file.startsWith(path.resolve(process.cwd(), cfg.outputDir) + path.sep) || !fs.existsSync(file)) return send(res, 404, { error: "not found" });

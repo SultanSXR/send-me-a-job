@@ -1,6 +1,6 @@
 ---
 name: send-me-a-job
-description: Turn job links into tailored application packs (CV + cover letter .docx) from the user's own master profile, keep a tracked list of jobs, estimate privately how likely the user is to get each job, suggest the roles with the best chances, advise on profile changes that raise them, and fill in application forms in the Claude desktop app's browser, live or hands-off with phone notifications, always with a final yes before any submit. Use when the user pastes a job link and wants a CV or cover letter for it, says "send me a job", "build my application pack", "tailor my CV to this job", "apply to my ready jobs", "what are my chances", "suggest jobs I'm likely to get", "how can I improve my chances", "apply while I'm away", or wants to set up a job-link inbox for friends.
+description: Turn job links into tailored application packs (CV + cover letter .docx) from the user's own master profile, keep a tracked list of jobs, estimate privately how likely the user is to get each job, suggest the roles with the best chances, advise on profile changes that raise them, and fill in application forms in the Claude desktop app's browser, live or hands-off with phone notifications, always with a final yes before any submit. Use when the user pastes a job link and wants a CV or cover letter for it, says "send me a job", "build my application pack", "tailor my CV to this job", "apply to my ready jobs", "what are my chances", "suggest jobs I'm likely to get", "how can I improve my chances", "find me mentorships, internships or free courses for these jobs", "apply while I'm away", or wants to set up a job-link inbox for friends.
 ---
 
 # Send me a job
@@ -10,7 +10,7 @@ Prepares job applications from links. For each link: read the advert, check it s
 Files in this skill:
 - `scripts/make_docs.js` renders the CV and letter (.docx, A4) from a spec. Format is documented at the top of the file.
 - `templates/profile.example.json` is the master profile layout. `templates/spec.example.json` is a filled-in spec.
-- `references/apply.md` covers filling in employer forms. `references/hands-off.md` covers applying unattended on the user's computer, with notifications. `references/chance.md` covers private chance estimates, best-chance suggestions and profile advice. `references/automation.md` covers scheduled pack-building and the public link form.
+- `references/apply.md` covers filling in employer forms. `references/hands-off.md` covers applying unattended on the user's computer, with notifications. `references/chance.md` covers private chance estimates, best-chance suggestions and profile advice. `references/growth.md` covers programmes, internships and free courses linked to the user's jobs. `references/automation.md` covers scheduled pack-building and the public link form.
 
 ## 0. First run: the master profile
 
@@ -54,6 +54,10 @@ When suggesting new roles, look for the ones with the best chances and rank them
 Keep a short list of changes to the user's CV, LinkedIn, applications or targeting that would raise their chances. Never suggest claiming anything untrue.
 
 These estimates are private: never show them on the public link form or anywhere shared.
+
+## 2c. Programmes, internships and free courses
+
+Alongside the suggested jobs, suggest (a) mentorship programmes, internships and work-experience schemes and (b) free courses and certifications that relate to the user's jobs, including jobs friends sent. The user can ask for courses of about 3 months, 6 months, 1 year or over a year. Follow `references/growth.md`: free only, verified on the provider's own page, any industry, and a course goes on the CV only once completed. Keep these private like the chance estimates.
 
 ## 3. Apply (only when asked)
 

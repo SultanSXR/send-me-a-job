@@ -39,6 +39,7 @@ templates/spec.example.json
 references/apply.md          filling in employer forms safely (live)
 references/hands-off.md      applying while you're away, with notifications
 references/automation.md     scheduled pack-building and the public link form
+references/growth.md         programmes, internships and free courses linked to your jobs
 ```
 
 ## 2. Hands-off: let it apply while you're away
@@ -106,6 +107,7 @@ Each pack goes into `out/<job id>/` and contains `<Name>_<Company>_<Role>_CV.doc
 | `score [id …]` | Estimate your chance of an offer for open jobs (private) |
 | `suggest [--count 5]` | Find open roles where your chances are best, ranked |
 | `advice` | Profile changes that would raise your chances |
+| `growth [programmes\|courses]` | Free programmes, internships, courses and certifications linked to your jobs (see below) |
 | `render <spec.json> [dir]` | Render a CV and letter from a spec, with no API call |
 | `serve [--port 4321]` | Local web portal |
 | `package-skill` | Build `dist/send-me-a-job-skill.zip` |
@@ -132,6 +134,26 @@ The numbers are deliberately honest. Graduate schemes often take about 1 in 100 
 The local portal shows suggestions ranked by chance, an "Add to my jobs" button, and a "How to raise your chances" box. All of it stays on your computer: nothing about your chances is ever shown on the public form. In the Claude app, ask *"what are my chances for these jobs?"*, *"suggest jobs I'm likely to get"* or *"how can I improve my chances?"*.
 
 These steps use Anthropic's web search tool through your API key, so each estimate costs a few searches. `researchSearches` and `suggestSearches` in `config.json` cap them.
+
+## Programmes, internships and free courses
+
+Next to the suggested jobs, the portal suggests ways to become a stronger candidate for the jobs you're applying to, including the ones friends send you:
+
+- **Mentorship, internships and work experience**: free programmes, insight schemes and placements.
+- **Free courses and certifications** that would strengthen your CV or help at interview. Add a course to your CV only after you've completed it.
+
+It works for any industry. The research follows your profile (`tracks`, and the optional `industries` list) and the jobs in your list, and picks platforms that suit your field. To make it check particular sites first, list them in `config.json`: `"growthPlatforms": ["Example Industry Association", "example-programmes.org"]`.
+
+Every item shows its length. Filter by **Up to 3 months**, **Up to 6 months**, **Up to 1 year** or **Over 1 year**. Only free options are kept. If a certificate costs money the item says "Free to learn" and explains. Every item has the jobs it helps, its eligibility rules and its deadline. Mark items **Save**, **Done** or **Not for me**; the research uses that when it looks for more. Like your chances, these stay on your computer and never appear on the public form.
+
+| Command | What it does |
+|---|---|
+| `send-me-a-job growth [programmes\|courses] [--duration 3m\|6m\|1y\|1y+] [--count 5]` | Research and save new items |
+| `send-me-a-job growth list [--kind …] [--duration …]` | Show saved items |
+| `send-me-a-job growth mark <id> saved\|done\|dismissed` | Update an item |
+| `send-me-a-job run --suggest` | Also refreshes these alongside the job suggestions (turn off with `"growthOnSuggest": false`) |
+
+In the Claude app, ask *"find me free courses and mentorships for these jobs"* or *"what 3-month courses would help me?"*. Settings in `config.json`: `growthCount`, `growthSearches`, `growthDurations`, `growthPlatforms`, `growthOnSuggest`.
 
 ## 4. Let friends send you jobs (optional)
 
@@ -164,7 +186,7 @@ links ─┬─ CLI `add` / local portal
 Code map:
 
 - `cli/index.js`: command parsing and every command.
-- `cli/lib.js`: config, the job store (`data/jobs.json`), advert fetching (`fetchAdvert`), tailoring with the Anthropic Messages API (`tailor`), building packs (`buildJob`), chance estimates with web search (`scoreJob`, `scoreOpen`), best-chance suggestions (`suggest`), profile advice (`makeAdvice`) and Netlify import (`pullNetlify`).
+- `cli/lib.js`: config, the job store (`data/jobs.json`), advert fetching (`fetchAdvert`), tailoring with the Anthropic Messages API (`tailor`), building packs (`buildJob`), chance estimates with web search (`scoreJob`, `scoreOpen`), best-chance suggestions (`suggest`), programmes and free courses (`growth`), profile advice (`makeAdvice`) and Netlify import (`pullNetlify`).
 - `cli/portal.js`: the local web portal and its small JSON API.
 - `cli/test.js`: an end-to-end test against a mock API (`npm test`, needs no key).
 - `skill/send-me-a-job/scripts/make_docs.js`: the `.docx` renderer, shared by the skill and the CLI.

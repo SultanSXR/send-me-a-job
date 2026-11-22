@@ -27,6 +27,18 @@ const server = http.createServer((req, res) => {
         { company: "Best Co", role: "Trainee", track: "legal", url: "https://best.example/jobs/1", why: "Fits.", sponsorship: "yes", chance: chance(6) },
         { company: "Low Co", role: "Analyst", track: "business", url: "https://low.example/jobs/2", why: "Meh.", sponsorship: "unknown", chance: chance(1) },
         { company: "Dup", role: "Dup", track: "business", url: `http://127.0.0.1:${server.address().port}/job/1`, why: "dup", sponsorship: "yes", chance: chance(9) }] };
+      else if (body.system.startsWith("GROWTH SUGGESTIONS")) {
+        assert.ok(body.tools && body.tools[0].type.startsWith("web_search"));
+        const u = body.messages[0].content, jobId = (u.match(/^([0-9a-f]{8}) \| /m) || [])[1];
+        if (u.includes("FIND: mentorship")) out = { items: [
+          { title: "Mentoring Scheme", provider: "Example Body", url: "https://body.example/mentor", type: "mentorship", cost: "free", durationMonths: 2, durationLabel: "8 weeks", why: "Fits.", relatesTo: [jobId, "nope"] },
+          { title: "Paid Bootcamp", provider: "Pay Co", url: "https://pay.example/camp", type: "internship", cost: "paid", durationMonths: 1 },
+          { title: "Long Placement", provider: "Big Co", url: "https://big.example/place", type: "internship", cost: "free", durationMonths: 18, durationLabel: "18 months" },
+          { title: "Bad link", provider: "X", url: "javascript:alert(1)", type: "other", cost: "free", durationMonths: 1 }] };
+        else out = { items: [
+          { title: "Intro Analytics", provider: "Uni", url: "https://uni.example/analytics", type: "certification", cost: "free-to-learn", costNote: "Certificate costs extra", durationMonths: 5, boosts: "resume", relatesTo: [jobId] },
+          { title: "Year-long Diploma", provider: "Uni", url: "https://uni.example/diploma", type: "course", cost: "free", durationMonths: 14 }] };
+      }
       else if (body.system.startsWith("PROFILE ADVICE")) out = { summary: "Do these.", items: [{ title: "Add figures", detail: "Add real numbers.", why: "Low skills score." }] };
       else {
         assert.ok(body.system.includes("ONLY facts in the profile"));
@@ -68,6 +80,25 @@ server.listen(0, "127.0.0.1", async () => {
     const sug = all.filter(j => j.status === "suggested");
     assert.strictEqual(sug.length, 1, "only the 6% role passes the 2% minimum; duplicate ignored");
     assert.strictEqual(sug[0].company, "Best Co");
+    // Growth: programmes and courses linked to jobs, free only, duration buckets
+    console.log(await run("growth"));
+    const G = JSON.parse(fs.readFileSync(path.join(tmp, "data/growth.json"), "utf8")).items;
+    assert.deepStrictEqual(G.map(g => g.title).sort(), ["Intro Analytics", "Long Placement", "Mentoring Scheme", "Year-long Diploma"], "paid and non-http items dropped");
+    const mentor = G.find(g => g.title === "Mentoring Scheme");
+    assert.strictEqual(mentor.bucket, "3m");
+    assert.strictEqual(mentor.relatesTo.length, 1, "unknown job ids are dropped");
+    assert.ok(jobs.some(j => j.id === mentor.relatesTo[0]));
+    assert.strictEqual(G.find(g => g.title === "Long Placement").bucket, "1y+");
+    assert.strictEqual(G.find(g => g.title === "Intro Analytics").bucket, "6m");
+    assert.strictEqual(G.find(g => g.title === "Intro Analytics").cost, "free-to-learn");
+    assert.ok(!/legal|law/i.test(JSON.stringify(G)), "no industry assumptions");
+    const listed = await run("growth", "list", "--duration", "6m");
+    assert.ok(listed.includes("Mentoring Scheme") && listed.includes("Intro Analytics") && !listed.includes("Long Placement"), "6m filter is cumulative");
+    assert.ok((await run("growth", "list", "--duration", "1y+")).includes("Year-long Diploma"));
+    console.log(await run("growth", "courses", "--duration", "3m")); // mock only returns known urls now: nothing new
+    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(tmp, "data/growth.json"), "utf8")).items.length, 4, "no duplicates");
+    console.log(await run("growth", "mark", mentor.id, "saved"));
+    assert.strictEqual(JSON.parse(fs.readFileSync(path.join(tmp, "data/growth.json"), "utf8")).items.find(g => g.id === mentor.id).status, "saved");
     console.log(await run("advice"));
     assert.ok(JSON.parse(fs.readFileSync(path.join(tmp, "data/advice.json"), "utf8")).items.length === 1);
     console.log(await run("list"));
@@ -85,6 +116,12 @@ server.listen(0, "127.0.0.1", async () => {
     const list = await (await fetch(pb + "/api/jobs")).json();
     assert.strictEqual(list.length, 3);
     assert.ok((await (await fetch(pb + "/api/advice")).json()).items.length === 1);
+    const pg = await (await fetch(pb + "/api/growth")).json();
+    assert.strictEqual(pg.items.length, 4);
+    assert.strictEqual((await (await fetch(`${pb}/api/growth/mark/${mentor.id}/dismissed`, { method: "POST", headers: { origin: pb } })).json()).status, "dismissed");
+    assert.strictEqual((await fetch(`${pb}/api/growth/mark/${mentor.id}/bogus`, { method: "POST", headers: { origin: pb } })).status, 400);
+    const gr = await (await fetch(pb + "/api/growth/run", { method: "POST", headers: { origin: pb, "content-type": "application/json" }, body: JSON.stringify({ kind: "courses", durations: ["6m"] }) })).json();
+    assert.strictEqual(gr.added, 0);
     const add = await (await fetch(pb + "/api/add", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: "https://example.com/careers/1" }) })).json();
     assert.ok(add.added);
     const q = await (await fetch(`${pb}/api/mark/${skipped.id}/awaiting-approval`, { method: "POST", headers: { origin: pb } })).json();

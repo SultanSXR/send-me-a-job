@@ -11,6 +11,16 @@
   "suggestCount": 5,
   "suggestSearches": 15,
   "minSuggestChance": 2,
+  "growthCount": 5,
+  "growthSearches": 12,
+  "growthDurations": [
+    "3m",
+    "6m",
+    "1y",
+    "1y+"
+  ],
+  "growthPlatforms": [],
+  "growthOnSuggest": true,
   "netlify": {
     "_comment": "Optional: pull links from a Netlify form (see public-form/). Needs NETLIFY_TOKEN in the environment.",
     "formId": ""
