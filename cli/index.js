@@ -119,6 +119,7 @@ async function main() {
     case "run": {
       if (cfg.netlify?.formId && process.env.NETLIFY_TOKEN) console.log(`Imported ${await lib.pullNetlify(cfg)} new link(s) from Netlify.`);
       try { const n = await lib.pullFeedback(cfg); if (n) console.log(`Imported ${n} new suggestion(s).`); } catch (e) { console.log(`  ✗ suggestions: ${e.message}`); }
+      lib.autoPrepare(cfg); // deadline first: suggestions closing soon get packs built now (never applied)
       await buildMany(cfg, []);
       const profile = lib.loadProfile(cfg);
       if (cfg.triageOnRun !== false && lib.readFeedback(cfg).items.some(x => x.status === "new")) {

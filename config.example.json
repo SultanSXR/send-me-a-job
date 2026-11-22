@@ -11,6 +11,8 @@
   "suggestCount": 5,
   "suggestSearches": 15,
   "minSuggestChance": 2,
+  "autoPrepareDays": 10,
+  "autoPrepareMinChance": 2,
   "growthCount": 5,
   "growthSearches": 12,
   "growthDurations": [

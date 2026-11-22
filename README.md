@@ -135,6 +135,13 @@ The numbers are deliberately honest. Graduate schemes often take about 1 in 100 
 
 The local portal shows suggestions ranked by chance, an "Add to my jobs" button, and a "How to raise your chances" box. All of it stays on your computer: nothing about your chances is ever shown on the public form. In the Claude app, ask *"what are my chances for these jobs?"*, *"suggest jobs I'm likely to get"* or *"how can I improve my chances?"*.
 
+### Raising your chances, built in
+- **Your facts for CVs.** The portal's "Your facts" box (saved to `data/facts.json`) holds real figures, grades in the employer's terms and what you do now. Packs and estimates use them word for word and never add to them.
+- **Targeting list.** `data/targeting.json` (copy `targeting.example.json`) lists employers or schemes to avoid (e.g. right to work required) and ones to prefer (confirmed sponsors, career-changer friendly, large intakes). Suggestions and packs skip the avoid list.
+- **Work-rights check.** If you need sponsorship, scoring and packs check the employer's sponsor record and, for the UK, whether the occupation and salary meet the Skilled Worker rules (`swCheck`).
+- **Deadline first.** Set `autoPrepareDays` (e.g. 10) and `run` builds packs for suggestions closing soon before anything else. Building a pack never applies; applying still needs your yes.
+- **Commercial framing.** For business roles, packs lead each past role with its commercial side, using only your facts.
+
 These steps use Anthropic's web search tool through your API key, so each estimate costs a few searches. `researchSearches` and `suggestSearches` in `config.json` cap them.
 
 ## Programmes, internships and free courses

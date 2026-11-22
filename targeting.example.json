@@ -1,0 +1,10 @@
+{
+  "_comment": "Optional. Copy to data/targeting.json. Private: never published. Employers in 'avoid' are skipped when suggesting and building; the other lists are preferred.",
+  "avoid": [
+    { "employer": "Example LLP", "scope": "vacation scheme", "reason": "advert says applicants must already have the right to work" }
+  ],
+  "sponsorConfirmed": ["Employer whose careers page says it sponsors"],
+  "sponsorLikely": ["Licensed sponsor that has hired international candidates"],
+  "careerChangerFriendly": [],
+  "largeIntakes": []
+}

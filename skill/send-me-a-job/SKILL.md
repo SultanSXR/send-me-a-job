@@ -20,7 +20,11 @@ Look for the user's profile, in this order: a `profile.json` they attached or th
 - which tracks (kinds of job) they are going for, in their own industry (e.g. "marketing" and "design"), and how to position each one. Tracks are free-form: the portal, the public form and the packs all follow the keys of `profile.tracks`
 - anything they know but never want on a CV (`notForCV`)
 
-Save it as `profile.json` and show it to them to confirm. From then on, **the profile is the only source of facts about the user.**
+Save it as `profile.json` and show it to them to confirm. From then on, **the profile is the only source of facts about the user**, together with `data/facts.json` (below).
+
+**Your facts.** Offer a short "Your facts for CVs" list the user fills in themselves (`data/facts.json`, `{fields:{results, partnerships, teams, grades, current, other}, updatedAt}`; the local portal has a form for it): real figures, grades in the employer's terms, and what they do now. Use these word for word. Never round, inflate or add to them, and never fill a field for them.
+
+**Targeting (optional, private).** `data/targeting.json` (see `templates/targeting.example.json`) holds `avoid` (`{employer, scope, reason}`: schemes or offices that need existing work rights or refuse sponsorship) and lists to prefer: `sponsorConfirmed`, `sponsorLikely`, `careerChangerFriendly`, `largeIntakes`. Skip anything in `avoid` when suggesting and building, and add to the lists as research confirms things.
 
 ## 1. Collect links
 
@@ -35,9 +39,11 @@ Statuses: `new`, `preparing`, `ready`, `queued` (picked for applying), `awaiting
 ## 2. Build a pack for each new job
 
 1. **Read the advert.** Fetch the page. If it needs a sign-in or JavaScript, try a browser tool if one is available (read only, never click Apply). If you still can't read it, ask the user to paste the advert text.
-2. **Check fit.** Skip the job (status `skipped`, with the reason) if it is closed, if it needs a qualification or language the user doesn't have, or if it plainly says it cannot sponsor visas or needs existing work rights and the profile has `needsSponsorship: true`. If sponsorship isn't mentioned, look it up quickly (in the UK, the gov.uk register of licensed sponsors) and record `yes`, `location-limited` or `unknown`.
+2. **Check fit.** Skip the job (status `skipped`, with the reason) if it is closed, if the employer and scope are in `targeting.avoid`, if it needs a qualification or language the user doesn't have, or if it plainly says it cannot sponsor visas or needs existing work rights and the profile has `needsSponsorship: true`. If sponsorship isn't mentioned, look it up quickly (in the UK, the gov.uk register of licensed sponsors) and record `yes`, `location-limited` or `unknown`. If the user needs sponsorship, also check that the occupation and salary meet the destination's rules (in the UK, the Skilled Worker eligible-occupation list and salary threshold on gov.uk) and record `swCheck: {occupation, eligible, salaryOk, note}`. If it is unclear, list the question to ask the employer under gaps.
 3. **Tailor.** Write `spec.json` as described in `scripts/make_docs.js`:
    - Pick and reorder the most relevant roles and bullets. You may shorten or rephrase them, but never add facts, numbers, dates or qualifications. Never use anything in `notForCV`.
+   - Put the user's own figures from `data/facts.json` into the matching bullets word for word, grades where the academic record matters, and their current role first if they entered one.
+   - For commercial roles, lead each past role with its commercial side (deals, partnerships, customers won, budgets, revenue), using only existing facts.
    - Write a headline and a 4–5 line profile in the language of the advert, plus 6–8 key skills.
    - If the track's guidance in `profile.tracks` says to put education first, set `cv.educationFirst: true`.
    - Cover letter: 4 paragraphs, under 350 words. Make it specific to the employer, using real facts from its site. Use today's date and the recipient from the advert. If the user needs sponsorship, end with the profile's `workRights` sentence.
@@ -49,7 +55,9 @@ Statuses: `new`, `preparing`, `ready`, `queued` (picked for applying), `awaiting
 
 For every job not yet applied to, estimate the chance of an offer as set out in `references/chance.md`: research the advert, the employer's hiring history, the market, aggregate patterns of past hires and sponsorship. Then store a percentage with a range, confidence, factor scores and sources.
 
-When suggesting new roles, look for the ones with the best chances and rank them by percent. Retire weak suggestions when clearly better ones turn up.
+When suggesting new roles, look for the ones with the best chances and rank them by percent. Retire weak suggestions when clearly better ones turn up. Prefer employers on the targeting lists and never suggest one in `avoid`.
+
+**Deadline first.** With `autoPrepareDays` set (e.g. 10), suggestions closing within that many days that aren't avoided, aren't refusing sponsorship and meet the minimum chance move to `new`, so their packs are built first. Building a pack never applies: applying still needs the user's yes.
 
 Keep a short list of changes to the user's CV, LinkedIn, applications or targeting that would raise their chances. Never suggest claiming anything untrue.
 

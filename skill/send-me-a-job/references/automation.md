@@ -11,10 +11,10 @@ To read submissions: through a Netlify connector if the session has one (form su
 ## B. Scheduled pack runs (inside Claude)
 If the session can create scheduled tasks, offer a pack task whose prompt is self-contained (each run starts fresh). Ask how often; twice a day (morning and early evening) works well. There is no per-run limit by default: each run builds every `new` or queued job, unless the user asks for a cap.
 1. Gather new links from the agreed sources (form, mail with a subject like "Job", the jobs list).
-2. Build packs for every `new` job (and every job the user queued with "Add to the queue"), following SKILL.md section 2.
+2. Deadline first: if the user agreed to it (`autoPrepareDays`), move suggestions closing within that many days to `new`, skipping anything in `targeting.avoid`, anything refusing sponsorship and anything below the minimum chance. Then build packs for every `new` job (and every job the user queued with "Add to the queue"), following SKILL.md section 2. Building a pack never applies.
 3. Estimate chances for open jobs that have no recent estimate, and add suggestions with the best chances, following `references/chance.md`. Record them as suggestions, never as applications. Refresh the advice list.
 3b. Refresh programmes, internships and free courses linked to the jobs, following `references/growth.md`. They sit beside the suggested jobs and never go on the public form.
-4. End with a short summary: packs ready, jobs skipped and why, links that need the user.
+4. End with a short summary: packs ready, jobs skipped and why, links that need the user, and any empty "Your facts" fields that would strengthen the packs.
 
 The task must never submit, send email, or contact employers. It only prepares packs.
 

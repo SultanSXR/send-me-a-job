@@ -37,6 +37,7 @@ dialog.choose{border:1px solid #ccc;border-radius:12px;padding:18px;max-width:42
 <div class="card"><div class="row" id="gfilter"></div><div class="row" style="margin-top:8px"><button id="gfind" class="ghost">Find more</button><span id="gmsg" class="muted"></span></div></div>
 <h3>Mentorship, internships &amp; work experience</h3><div class="card" id="gprog">Loading…</div>
 <h3>Free courses &amp; certifications</h3><div class="card" id="gcourse">Loading…</div>
+<h2>Your facts for CVs <small class="muted">only true details; used word for word in packs and chances</small></h2><div class="card"><form id="facts" style="display:block"></form><div class="row" style="margin-top:8px"><button id="fsave">Save facts</button><span id="fmsg" class="muted"></span></div></div>
 <h2>Your jobs</h2><div class="card" id="list">Loading…</div></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -124,7 +125,11 @@ async function loadProps(){const P=(await api("/api/proposals")).items||[],F=(aw
 $("#fb").oninput=e=>{$("#fbc").textContent=e.target.value.length};
 $("#fb").onsubmit=async e=>{e.preventDefault();const t=e.target.text.value;try{await api("/api/suggest",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:t})});$("#fbm").textContent="Thanks, noted.";e.target.reset();$("#fbc").textContent="0";load()}catch(x){$("#fbm").textContent=x.message}};
 $("#add").onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{const r=await api("/api/add",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(d)});$("#msg").textContent=r.added?"Added.":"Already in your list.";e.target.reset();load()}catch(x){$("#msg").textContent=x.message}};
-loadTracks();load();
+async function loadFacts(){const r=await api("/api/facts"),F=$("#facts");F.textContent="";
+ for(const f of r.schema){const t=el("textarea",{name:f.key,maxlength:"600",rows:"2",placeholder:f.hint});t.value=(r.fields||{})[f.key]||"";t.style.width="100%";F.append(el("label",{text:f.label}),t)}
+ $("#fmsg").textContent=r.updatedAt?"Saved "+new Date(r.updatedAt).toLocaleString():"Empty fields are fine; never type anything you can't back up."}
+$("#fsave").onclick=async()=>{const fields={};for(const t of $("#facts").querySelectorAll("textarea"))fields[t.name]=t.value;const r=await api("/api/facts",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({fields})});$("#fmsg").textContent="Saved "+new Date(r.updatedAt).toLocaleString()};
+loadTracks();load();loadFacts();
 </script></body></html>`;
 
 function send(res, code, body, type = "application/json") {
@@ -145,6 +150,8 @@ function serve(cfg, port) {
       let m;
       if (req.method === "GET" && u.pathname === "/") return send(res, 200, PAGE, "text/html; charset=utf-8");
       if (req.method === "GET" && u.pathname === "/api/jobs") return send(res, 200, lib.readJobs(cfg).map(({ advertText, ...j }) => j));
+      if (req.method === "GET" && u.pathname === "/api/facts") return send(res, 200, { ...lib.readFacts(cfg), schema: lib.FACT_FIELDS.map(([key, label, hint]) => ({ key, label, hint })) });
+      if (req.method === "POST" && u.pathname === "/api/facts") { const b = await readBody(req); return send(res, 200, lib.writeFacts(cfg, b.fields)); }
       if (req.method === "GET" && u.pathname === "/api/advice") return send(res, 200, lib.readAdvice(cfg) || {});
       if (req.method === "GET" && u.pathname === "/api/tracks") { try { return send(res, 200, lib.trackNames(lib.loadProfile(cfg))); } catch (_) { return send(res, 200, []); } }
       if (req.method === "GET" && u.pathname === "/api/feedback") return send(res, 200, lib.readFeedback(cfg));

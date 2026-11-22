@@ -47,6 +47,7 @@ const server = http.createServer((req, res) => {
       else if (body.system.startsWith("PROFILE ADVICE")) out = { summary: "Do these.", items: [{ title: "Add figures", detail: "Add real numbers.", why: "Low skills score." }] };
       else {
         assert.ok(body.system.includes("ONLY facts in the profile"));
+        assert.ok(body.messages[0].content.includes("YOUR FACTS") && body.messages[0].content.includes("TARGETING"), "packs see your facts and targeting");
         const skip = body.messages[0].content.includes("/job-skip");
         out = skip ? { decision: "skip", reason: "Cannot sponsor visas", company: "No Sponsor Ltd", role: "Analyst" }
           : { decision: "build", reason: "Good fit", company: "Example Co", role: "Marketing Executive", track: "business", location: "London", deadline: "1 Feb 2027", sponsorship: "unknown", gaps: [], screeningQuestions: [], spec };
@@ -162,7 +163,26 @@ server.listen(0, "127.0.0.1", async () => {
     assert.strictEqual(dl.status, 200);
     assert.strictEqual((await fetch(`${pb}/files/${ready.id}/..%2F..%2Fprofile.json`)).status, 404);
     assert.strictEqual((await fetch(pb + "/api/add", { method: "POST", headers: { origin: "https://evil.example" }, body: "{}" })).status, 403);
+    // Your facts: saved locally, unknown keys dropped, length capped
+    const fr = await (await fetch(pb + "/api/facts", { method: "POST", headers: { "content-type": "application/json", origin: pb }, body: JSON.stringify({ fields: { results: "Grew bookings 20% (2023)", hack: "x", grades: "y".repeat(900) } }) })).json();
+    assert.deepStrictEqual(Object.keys(fr.fields).sort(), ["grades", "results"]);
+    assert.strictEqual(fr.fields.grades.length, 600);
+    assert.ok((await (await fetch(pb + "/api/facts")).json()).schema.length >= 5);
     srv.close();
+
+    // Targeting avoid list + deadline-first auto-prepare
+    const L = require("./lib"), C = L.loadConfig();
+    fs.writeFileSync(path.join(tmp, "data/targeting.json"), JSON.stringify({ avoid: [{ employer: "Avoid Me LLP", reason: "needs right to work" }] }));
+    assert.ok(L.avoidedBy(L.readTargeting(C), "Avoid Me LLP (London)"));
+    assert.ok(!L.avoidedBy(L.readTargeting(C), "Example Co"));
+    const now = Date.parse("2027-01-10T00:00:00Z");
+    L.updateJob(C, L.addJob(C, { url: "https://soon.example/job" }).job.id, { status: "suggested", company: "Soon Co", role: "A", deadline: "15 January 2027", chance: { percent: 4 } });
+    L.updateJob(C, L.addJob(C, { url: "https://later.example/job" }).job.id, { status: "suggested", company: "Later Co", role: "B", deadline: "30 March 2027", chance: { percent: 9 } });
+    L.updateJob(C, L.addJob(C, { url: "https://avoid.example/job" }).job.id, { status: "suggested", company: "Avoid Me LLP", role: "C", deadline: "12 January 2027", chance: { percent: 9 } });
+    assert.strictEqual(L.autoPrepare({ ...C, autoPrepareDays: 0 }, () => {}, now), 0, "off by default");
+    assert.strictEqual(L.autoPrepare({ ...C, autoPrepareDays: 10 }, () => {}, now), 1);
+    const st = Object.fromEntries(L.readJobs(C).filter(j => /soon|later|avoid/.test(j.url)).map(j => [j.company, j.status]));
+    assert.deepStrictEqual(st, { "Soon Co": "new", "Later Co": "suggested", "Avoid Me LLP": "suggested" });
 
     console.log("\nAll tests passed.");
     server.close();
