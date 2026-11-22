@@ -6,18 +6,20 @@
 <meta name="robots" content="noindex">
 <title>Send me a job</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#f7f4ee;--card:#fffdf9;--ink:#1f1d1a;--muted:#6d675e;--line:#e6dfd3;--accent:#1d4d4f;--accent-ink:#fff;--err:#b3261e;--gold:#a8792a;--ok:#1f6b3b}
-  @media (prefers-color-scheme: dark){:root{--bg:#151413;--card:#1e1c1a;--ink:#f1ede6;--muted:#a49d92;--line:#34302b;--accent:#5fa3a5;--accent-ink:#0f1414;--err:#f2b8b5;--gold:#d3a557;--ok:#8fd3a6}}
+  :root{color-scheme:light dark;--bg:#f4ead5;--card:#fffaf0;--ink:#2b1d14;--muted:#7a6450;--line:#e6d3b1;--edge:#2b1d14;--shadow:#e2c89a;--dot:#ead8b4;--accent:#2f7d79;--accent-ink:#fff;--gold:#c98515;--orange:#d9570b;--pink:#d9707f;--err:#b3261e;--ok:#24663a}
+  @media (prefers-color-scheme: dark){:root{--bg:#1d1712;--card:#28201a;--ink:#f5e9d6;--muted:#c2ab90;--line:#4a3a2c;--edge:#0d0906;--shadow:#0d0906;--dot:#2a211a;--accent:#5cc0b5;--accent-ink:#1d1712;--gold:#f2b542;--orange:#ff8a5b;--pink:#f29aa6;--err:#f2b8b5;--ok:#93dcab}}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
-  .wrap{max-width:640px;margin:0 auto;padding:48px 16px 80px}
-  h1{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:34px;margin:0 0 8px;letter-spacing:-.01em}
-  h2{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:22px;margin:40px 0 4px}
-  .lead{color:var(--muted);margin:0 0 28px}
+  body{margin:0;background:var(--bg);background-image:radial-gradient(var(--dot) 1.2px,transparent 1.2px);background-size:20px 20px;color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+  .wrap{max-width:640px;margin:0 auto;padding:44px 16px 80px}
+  h1{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:46px;margin:0;letter-spacing:-.02em;color:var(--orange)}
+  h1 em{font-style:italic;font-weight:700;color:var(--accent)}
+  .stripes{height:10px;max-width:340px;border-radius:999px;margin:10px 0 18px;background:linear-gradient(90deg,var(--orange) 0 25%,var(--gold) 25% 50%,var(--accent) 50% 75%,var(--pink) 75%)}
+  h2{font-family:Fraunces,Georgia,serif;font-weight:800;font-size:24px;margin:40px 0 4px}
+  .lead{color:var(--muted);margin:0 0 28px;max-width:60ch}
   .sub{color:var(--muted);margin:0 0 14px;font-size:14px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .card{background:var(--card);border:2px solid var(--edge);border-radius:14px;padding:22px;box-shadow:4px 4px 0 var(--shadow)}
   form{display:grid;gap:16px}
   label,.lbl{font-weight:500;font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
   input[type=url],input[type=text],textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
@@ -30,34 +32,36 @@
   .seg small{display:block;font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
   .seg input:checked + span{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--card)}
   .seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
-  @media (max-width:520px){.seg{grid-template-columns:1fr}}
-  button{font:inherit;font-weight:600;background:var(--accent);color:var(--accent-ink);border:0;border-radius:9px;padding:11px 20px;cursor:pointer;justify-self:start}
+  @media (max-width:520px){.seg{grid-template-columns:1fr}h1{font-size:38px}}
+  button{font:inherit;font-weight:700;background:var(--accent);color:var(--accent-ink);border:2px solid var(--edge);border-radius:10px;padding:9px 18px;cursor:pointer;justify-self:start;box-shadow:2px 2px 0 var(--edge)}
+  button:active{transform:translate(2px,2px);box-shadow:none}
   button:disabled{opacity:.55;cursor:default}
   .hidden{position:absolute;left:-9999px}
   .msg{font-size:13px;color:var(--err);min-height:1em}
   .thanks{font-size:13px;color:var(--ok);min-height:0;margin:0 0 10px}
   .foot{font-size:13px;color:var(--muted);margin-top:28px}
-  ul.sug{list-style:none;padding:0;margin:0;display:grid;gap:10px}
-  .s{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:12px;padding:14px 16px;display:grid;gap:6px;transition:opacity .35s ease,transform .35s ease}
+  ul.sug{list-style:none;padding:0;margin:0;display:grid;gap:12px}
+  .s{background:var(--card);border:2px solid var(--edge);border-left:6px solid var(--gold);border-radius:12px;padding:14px 16px;display:grid;gap:6px;box-shadow:4px 4px 0 var(--shadow);transition:opacity .35s ease,transform .35s ease}
   .s.out{opacity:0;transform:translateX(12px)}
   .s .t{font-weight:600;font-size:16px;word-break:break-word}
   .s .t a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line)}
   .s .m{font-size:13px;color:var(--muted)}
   .s .w{font-size:14px}
   .tag{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
-  .card + .card{margin-top:14px}
+  .card + .card{margin-top:18px}
   .count{float:right;font-weight:400;font-size:12px}
   .sugbox .row{margin-top:10px}
   .ok{color:var(--ok)}
   .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:2px}
   .row button{padding:7px 14px;font-size:13px}
   .row .bad{font-size:13px;color:var(--err)}
-  .empty{color:var(--muted);text-align:center;padding:24px;border:1px dashed var(--line);border-radius:12px;font-size:14px}
+  .empty{color:var(--muted);text-align:center;padding:24px;border:2px dashed var(--line);border-radius:12px;font-size:14px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1 id="h1">Send me a job</h1>
+  <h1 id="h1">Send me a <em>job</em></h1>
+  <div class="stripes" aria-hidden="true"></div>
   <p class="lead">Seen a role that would suit <span class="who">me</span>? Paste the link below. It can be a LinkedIn job or a company's careers page. A tailored CV and cover letter will be prepared for it. No sign-in needed.</p>
 
   <section class="card">
@@ -121,7 +125,7 @@ if (TRACKS.length) {
 const trackLabel = v => (TRACKS.find(t => t.value === v) || {}).label || "";
 if (OWNER) {
   document.title = "Send " + OWNER + " a job";
-  document.getElementById("h1").textContent = "Send " + OWNER + " a job";
+  document.getElementById("h1").replaceChildren("Send " + OWNER + " a ", el("em", { text: "job" }));
   document.getElementById("sugH").textContent = "Suggested for " + OWNER;
   document.querySelectorAll(".who").forEach(e => e.textContent = OWNER);
   document.querySelector("#sugSub").innerHTML = document.querySelector("#sugSub").innerHTML.replace(" am going", " is going");
