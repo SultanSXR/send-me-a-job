@@ -6,8 +6,8 @@
   "linkedin": "linkedin.com/in/example",
   "fileBase": "Jane_Doe_Example_Co_Marketing_Executive",
   "cv": {
-    "headline": "Marketing & Business Development | LLB (Hons) Law",
-    "profile": "Commercial professional with a law degree and hands-on experience running a small web design business and paid marketing campaigns.",
+    "headline": "Marketing & Business Development | BA (Hons) Business",
+    "profile": "Commercial professional with a business degree and hands-on experience running a small web design business and paid marketing campaigns.",
     "skills": ["Digital marketing", "Copywriting", "Client relationships", "Commercial awareness"],
     "educationFirst": false,
     "experience": [
@@ -16,7 +16,7 @@
         "bullets": ["Founded and run a small web design business serving local companies"]
       }
     ],
-    "education": [{ "degree": "LLB (Hons) Law, 2:1", "school": "Example University", "dates": "2015 – 2018" }],
+    "education": [{ "degree": "BA (Hons) Business, 2:1", "school": "Example University", "dates": "2015 – 2018" }],
     "certifications": ["Google Ads Search Certification (2022)"]
   },
   "letter": {

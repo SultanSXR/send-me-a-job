@@ -3,9 +3,10 @@
 ## A. Public "Send me a job" form (optional)
 The repository's `public-form/index.html` is a static page that friends can use to send links without signing in. Deploy it to Netlify (drag the folder onto app.netlify.com/drop, or `netlify deploy`). Netlify Forms picks up the `job-links` form automatically. Before deploying, edit the two settings at the top of its `<script>`:
 - `OWNER` – the first name shown on the page.
+- `TRACKS` – optional kinds of job (`[{value, label, hint}]`) matching the keys in `profile.tracks`. Leave empty to hide the choice.
 - `FEED` – optional. A published Google Sheet URL (`gviz/tq?tqx=out:json&sheet=Live&headers=1`) with columns `id, track, company, role, location, deadline, url, why`, shown as "Suggested for <name>". Leave it empty to hide that section.
 
-To read submissions: through a Netlify connector if the session has one (form submissions, read only), or with the Netlify API `GET /api/v1/forms/<formId>/submissions`. Each submission's `data` has `url`, `track`, `name` and `note`. Never delete submissions.
+To read submissions: through a Netlify connector if the session has one (form submissions, read only), or with the Netlify API `GET /api/v1/forms/<formId>/submissions`. Each submission's `data` has `url`, `track`, `name` and `note`. The page also has a second form, `portal-suggestions` (fields `suggestion`, max 140 characters, and `name`), read the same way and handled as in `references/feedback.md`. Never delete submissions.
 
 ## B. Scheduled pack runs (inside Claude)
 If the session can create scheduled tasks, offer a pack task whose prompt is self-contained (each run starts fresh). Ask how often; twice a day (morning and early evening) works well. There is no per-run limit by default: each run builds every `new` or queued job, unless the user asks for a cap.

@@ -45,7 +45,10 @@
   .s .m{font-size:13px;color:var(--muted)}
   .s .w{font-size:14px}
   .tag{font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-right:6px}
-  .tag.legal{border-color:var(--gold);color:var(--gold)}
+  .card + .card{margin-top:14px}
+  .count{float:right;font-weight:400;font-size:12px}
+  .sugbox .row{margin-top:10px}
+  .ok{color:var(--ok)}
   .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:2px}
   .row button{padding:7px 14px;font-size:13px}
   .row .bad{font-size:13px;color:var(--err)}
@@ -65,12 +68,9 @@
         <label for="url">Job link</label>
         <input id="url" name="url" type="url" required placeholder="https://www.linkedin.com/jobs/view/… or https://careers.company.com/…">
       </div>
-      <div>
+      <div id="trackWrap" hidden>
         <span class="lbl" id="trackLbl">Type of job</span>
-        <div class="seg" role="radiogroup" aria-labelledby="trackLbl">
-          <label><input type="radio" name="track" value="legal" required><span>Legal<small>Training contracts, fellowships, paralegal, legal assistant</small></span></label>
-          <label><input type="radio" name="track" value="business"><span>Non-legal<small>Business development, marketing, hospitality, commercial</small></span></label>
-        </div>
+        <div class="seg" id="trackSeg" role="radiogroup" aria-labelledby="trackLbl"></div>
       </div>
       <div>
         <label for="name">Your name (optional)</label>
@@ -85,6 +85,18 @@
     </form>
   </section>
 
+  <section class="card sugbox">
+    <form id="fb" action="/thank-you" method="POST" name="portal-suggestions" data-netlify="true" netlify-honeypot="bot-field">
+      <input type="hidden" name="form-name" value="portal-suggestions">
+      <p class="hidden"><label>Don't fill this out: <input name="bot-field"></label></p>
+      <div>
+        <label for="suggestion">Suggest an improvement to this page <span class="count" id="fbCount">0/140</span></label>
+        <input id="suggestion" name="suggestion" type="text" maxlength="140" required placeholder="Short and specific, up to 140 characters">
+      </div>
+      <div class="row"><button type="submit">Send suggestion</button><span class="msg" id="fbMsg" role="status"></span></div>
+    </form>
+  </section>
+
   <h2 id="sugH">Suggested roles</h2>
   <p class="sub" id="sugSub">Roles like the ones <span class="who">I</span> am going for. Know someone there, or think it's a strong fit? Recommend it, and a new suggestion takes its place.</p>
   <p class="thanks" id="thanks" role="status"></p>
@@ -93,11 +105,20 @@
   <p class="foot">Links are only used to prepare job applications.</p>
 </div>
 <script>
-// ---- Settings: edit these two lines before deploying ----
+// ---- Settings: edit these lines before deploying ----
 const OWNER = "";   // first name shown on the page, e.g. "Sam". Empty = "me".
+const TRACKS = [];  // optional kinds of job, matching your profile.tracks keys, e.g. [{value:"marketing",label:"Marketing",hint:"Campaigns, content, growth"}]. Empty = no choice shown.
 const FEED = "";    // optional published Google Sheet: https://docs.google.com/spreadsheets/d/<ID>/gviz/tq?tqx=out:json&sheet=Live&headers=1
 // ----------------------------------------------------------
 const SHOW = 5, SEEN_KEY = "smjRecommended";
+if (TRACKS.length) {
+  document.getElementById("trackWrap").hidden = false;
+  TRACKS.forEach((t, i) => {
+    const inp = el("input", { type: "radio", name: "track", value: t.value }); if (i === 0) inp.required = true;
+    document.getElementById("trackSeg").append(el("label", {}, inp, el("span", { text: t.label || t.value }, t.hint ? el("small", { text: t.hint }) : null)));
+  });
+}
+const trackLabel = v => (TRACKS.find(t => t.value === v) || {}).label || "";
 if (OWNER) {
   document.title = "Send " + OWNER + " a job";
   document.getElementById("h1").textContent = "Send " + OWNER + " a job";
@@ -110,7 +131,23 @@ document.getElementById("f").addEventListener("submit", e => {
   const url = document.getElementById("url").value.trim(), msg = document.getElementById("msg");
   let ok = false; try { const u = new URL(url); ok = u.protocol === "https:" || u.protocol === "http:"; } catch (_) {}
   if (!ok) { e.preventDefault(); msg.textContent = "Please paste a full link starting with https://"; return; }
-  if (!document.querySelector('input[name="track"]:checked')) { e.preventDefault(); msg.textContent = "Please choose Legal or Non-legal."; }
+  if (TRACKS.length && !document.querySelector('input[name="track"]:checked')) { e.preventDefault(); msg.textContent = "Please choose the type of job."; }
+});
+
+// 140-character suggestion box: sent to its own Netlify form without leaving the page.
+const fbIn = document.getElementById("suggestion"), fbMsg = document.getElementById("fbMsg");
+fbIn.addEventListener("input", () => { document.getElementById("fbCount").textContent = fbIn.value.length + "/140"; });
+document.getElementById("fb").addEventListener("submit", async e => {
+  e.preventDefault();
+  const form = e.target, text = fbIn.value.trim().slice(0, 140);
+  if (form.elements["bot-field"].value) return;
+  if (text.length < 3) { fbMsg.className = "msg"; fbMsg.textContent = "Please write a few words."; return; }
+  fbMsg.className = "msg"; fbMsg.textContent = "Sending…";
+  try {
+    const r = await fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ "form-name": "portal-suggestions", suggestion: text }).toString() });
+    if (!r.ok) throw new Error(r.status);
+    form.reset(); document.getElementById("fbCount").textContent = "0/140"; fbMsg.className = "msg ok"; fbMsg.textContent = "Thank you! Suggestions are read and used to improve this page.";
+  } catch (_) { fbMsg.className = "msg"; fbMsg.textContent = "Couldn't send that. Please try again."; }
 });
 
 function el(tag, props, ...kids){ const e=document.createElement(tag); for(const [k,v] of Object.entries(props||{})){ if(k==="class") e.className=v; else if(k==="text") e.textContent=v; else e.setAttribute(k,v);} kids.forEach(k=>k&&e.append(k)); return e; }
@@ -125,7 +162,7 @@ let items = [];
 async function recommend(item, btn, out, li){
   btn.disabled=true; out.className=""; out.textContent="Sending…";
   const name=document.getElementById("name").value.trim();
-  const body=new URLSearchParams({"form-name":"job-links", url:item.url, track:item.track==="legal"?"legal":"business", name, note:("Recommended from suggested roles"+(name?" by "+name:"")).slice(0,200)});
+  const body=new URLSearchParams({"form-name":"job-links", url:item.url, track:TRACKS.some(t=>t.value===item.track)?item.track:"", name, note:("Recommended from suggested roles"+(name?" by "+name:"")).slice(0,200)});
   try{
     const r=await fetch("/", {method:"POST", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body:body.toString()});
     if(!r.ok) throw new Error(r.status);
@@ -144,7 +181,7 @@ function render(){
     const btn=el("button",{type:"button",text:"Recommend"});
     const li=el("li",{class:"s"},
       el("div",{class:"t"}, el("a",{href:it.url,target:"_blank",rel:"noopener",text:`${it.role||"Role"} · ${it.company||""}`})),
-      el("div",{class:"m"}, el("span",{class:"tag"+(it.track==="legal"?" legal":""),text:it.track==="legal"?"Legal":"Non-legal"}), document.createTextNode([it.location, it.deadline?"Closes "+it.deadline:""].filter(Boolean).join(" · "))),
+      el("div",{class:"m"}, trackLabel(it.track)?el("span",{class:"tag",text:trackLabel(it.track)}):null, document.createTextNode([it.location, it.deadline?"Closes "+it.deadline:""].filter(Boolean).join(" · "))),
       it.why?el("div",{class:"w",text:it.why}):null,
       el("div",{class:"row"}, btn, out));
     btn.onclick=()=>recommend(it,btn,out,li);

@@ -28,7 +28,9 @@ h2{font-size:18px;margin:28px 0 0}h2 small{font-weight:400;font-size:13px}
 .chip{background:transparent;color:var(--ink);border:1px solid var(--line);padding:4px 12px;font-weight:500}.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}h3{font-size:15px;margin:18px 0 0}.done{opacity:.6}
 dialog.choose{border:1px solid #ccc;border-radius:12px;padding:18px;max-width:420px}dialog.choose button{display:block;width:100%;text-align:left;margin:0 0 8px}dialog.choose small{display:block;font-weight:400;opacity:.8}</style></head><body><div class="wrap">
 <h1>Send me a job</h1><p class="muted">Your jobs, stored on this computer in data/jobs.json. Packs are built with your Anthropic API key. Click Apply to choose "Apply now" or "Add to the queue". Queued jobs are filled in by the Claude desktop app (hands-off mode).</p>
-<div class="card"><form id="add"><input name="url" type="url" required placeholder="Paste a job link"><select name="track"><option value="">Track: auto</option><option value="legal">Legal</option><option value="business">Business</option></select><button>Add</button></form><div id="msg" class="muted"></div></div>
+<div class="card"><form id="add"><input name="url" type="url" required placeholder="Paste a job link"><select name="track" id="track"><option value="">Track: auto</option></select><button>Add</button></form><div id="msg" class="muted"></div></div>
+<div class="card"><form id="fb" style="grid-template-columns:1fr auto"><input name="text" maxlength="140" required placeholder="Suggest an improvement to this portal (max 140 characters)"><button>Send</button></form><div class="muted"><span id="fbc">0</span>/140 <span id="fbm"></span></div></div>
+<div id="props"></div>
 <div id="advice"></div>
 <h2>Suggested for you <small class="muted">best chance first</small></h2><div class="card" id="sugs">Loading…</div>
 <h2>Build your profile <small class="muted">free programmes, internships and courses linked to your jobs</small></h2>
@@ -73,6 +75,7 @@ function item(j){const row=el("div",{class:"row"},el("span",{class:"pill",text:j
   j.status==="needs-info"&&j.questions?el("div",{class:"err",text:"Needs you: "+[].concat(j.blocker||[],j.questions).join(" · ")+" — answer in the Claude app."}):null,
   j.status==="awaiting-approval"?el("div",{class:"err",text:"Filled in and waiting for your yes — reply \\"submit "+(j.company||"")+"\\" in the Claude app."}):null,
   open?chance(j):null,row)}
+async function loadTracks(){try{const t=await api("/api/tracks");const S=$("#track");t.forEach(k=>S.append(el("option",{value:k,text:k.charAt(0).toUpperCase()+k.slice(1)})))}catch(_){}}
 async function load(){const jobs=await api("/api/jobs");const pct=j=>j.chance?j.chance.percent:-1;
  const S=$("#sugs");S.textContent="";const sg=jobs.filter(j=>j.status==="suggested").sort((a,b)=>pct(b)-pct(a));
  if(!sg.length)S.append(el("p",{class:"muted",text:"No suggestions yet. Run: send-me-a-job suggest"}));sg.forEach(j=>S.append(item(j)));
@@ -81,7 +84,7 @@ async function load(){const jobs=await api("/api/jobs");const pct=j=>j.chance?j.
  const a=await api("/api/advice"),A=$("#advice");A.textContent="";
  if(a&&a.items&&a.items.length){const d=el("details",{class:"card advice"},el("summary",{text:"How to raise your chances ("+a.items.length+")"}));if(a.summary)d.append(el("p",{class:"muted",text:a.summary}));
   d.append(el("ol",{},a.items.map(i=>el("li",{},el("b",{text:i.title})," — "+i.detail,i.why?el("div",{class:"muted",text:"Why: "+i.why}):null))));A.append(d)}
- await loadGrowth(jobs)}
+ await loadGrowth(jobs);await loadProps()}
 
 let GF="all";const ORDER=["3m","6m","1y","1y+"];
 const DUR=[["all","Any length"],["3m","Up to 3 months"],["6m","Up to 6 months"],["1y","Up to 1 year"],["1y+","Over 1 year"]];
@@ -107,8 +110,21 @@ async function loadGrowth(jobs){const items=(await api("/api/growth")).items||[]
   if(!list.length)B.append(el("p",{class:"muted",text:none+" Press Find more, or run: send-me-a-job growth"}));list.forEach(g=>B.append(gitem(g,jobs)))}}
 $("#gfind").onclick=async()=>{const b=$("#gfind"),m=$("#gmsg");b.disabled=true;m.textContent="Researching… this can take a few minutes.";
  try{const r=await api("/api/growth/run",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({durations:durKeys(GF)})});m.textContent="Added "+r.added+" new.";}catch(e){m.textContent=e.message}b.disabled=false;load()};
+
+async function loadProps(){const P=(await api("/api/proposals")).items||[],F=(await api("/api/feedback")).items||[],A=$("#props");A.textContent="";
+ const open=P.filter(p=>["awaiting-approval","approved"].includes(p.status)),fresh=F.filter(x=>x.status==="new").length;
+ if(!open.length&&!fresh)return;
+ const d=el("details",{class:"card advice",open:"open"},el("summary",{text:"Proposed improvements ("+open.filter(p=>p.status==="awaiting-approval").length+" awaiting your approval)"}));
+ d.append(el("p",{class:"muted",text:"Built from visitors' suggestions. Nothing is changed or published until you approve it."}));
+ if(fresh){const b=el("button",{class:"ghost",text:"Review "+fresh+" new suggestion"+(fresh>1?"s":"")});b.onclick=async()=>{b.disabled=true;b.textContent="Reviewing…";try{await api("/api/improve",{method:"POST"})}catch(e){alert(e.message)}load()};d.append(b)}
+ for(const p of open){const row=el("div",{class:"row"},el("span",{class:"pill",text:"impact "+p.impact+"/5"}),el("span",{class:"pill",text:p.effort}),el("span",{class:"pill",text:"risk "+p.risk}),el("span",{class:"pill",text:p.status}));
+  if(p.status==="awaiting-approval"){for(const[l,st,g]of[["Approve","approved",0],["Reject","rejected",1]]){const b=el("button",{class:g?"ghost":"",text:l});b.onclick=async()=>{b.disabled=true;await api("/api/proposals/"+p.id+"/"+st,{method:"POST"});load()};row.append(b)}}
+  d.append(el("div",{class:"job"},el("div",{class:"t",text:p.title}),el("div",{text:p.change}),p.why?el("div",{class:"muted",text:"Why: "+p.why}):null,p.files&&p.files.length?el("div",{class:"muted",text:"Files: "+p.files.join(", ")}):null,row))}
+ A.append(d)}
+$("#fb").oninput=e=>{$("#fbc").textContent=e.target.value.length};
+$("#fb").onsubmit=async e=>{e.preventDefault();const t=e.target.text.value;try{await api("/api/suggest",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:t})});$("#fbm").textContent="Thanks, noted.";e.target.reset();$("#fbc").textContent="0";load()}catch(x){$("#fbm").textContent=x.message}};
 $("#add").onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target));try{const r=await api("/api/add",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(d)});$("#msg").textContent=r.added?"Added.":"Already in your list.";e.target.reset();load()}catch(x){$("#msg").textContent=x.message}};
-load();
+loadTracks();load();
 </script></body></html>`;
 
 function send(res, code, body, type = "application/json") {
@@ -126,9 +142,16 @@ function serve(cfg, port) {
       // Only accept same-origin requests to the local API.
       if (req.method !== "GET" && req.headers.origin && !/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(req.headers.origin)) return send(res, 403, { error: "forbidden" });
       const u = new URL(req.url, "http://x");
+      let m;
       if (req.method === "GET" && u.pathname === "/") return send(res, 200, PAGE, "text/html; charset=utf-8");
       if (req.method === "GET" && u.pathname === "/api/jobs") return send(res, 200, lib.readJobs(cfg).map(({ advertText, ...j }) => j));
       if (req.method === "GET" && u.pathname === "/api/advice") return send(res, 200, lib.readAdvice(cfg) || {});
+      if (req.method === "GET" && u.pathname === "/api/tracks") { try { return send(res, 200, lib.trackNames(lib.loadProfile(cfg))); } catch (_) { return send(res, 200, []); } }
+      if (req.method === "GET" && u.pathname === "/api/feedback") return send(res, 200, lib.readFeedback(cfg));
+      if (req.method === "GET" && u.pathname === "/api/proposals") return send(res, 200, lib.readProposals(cfg));
+      if (req.method === "POST" && u.pathname === "/api/suggest") { const b = await readBody(req); return send(res, 200, lib.addFeedback(cfg, { text: b.text, source: "portal" })); }
+      if (req.method === "POST" && u.pathname === "/api/improve") return send(res, 200, { proposals: await lib.improve(cfg, () => {}) });
+      if (req.method === "POST" && (m = u.pathname.match(/^\/api\/proposals\/([\w-]+)\/(approved|rejected)$/))) return send(res, 200, lib.markProposal(cfg, m[1], m[2]));
       if (req.method === "GET" && u.pathname === "/api/growth") return send(res, 200, lib.readGrowth(cfg));
       if (req.method === "POST" && u.pathname === "/api/growth/run") {
         const b = await readBody(req);
@@ -138,7 +161,6 @@ function serve(cfg, port) {
         return send(res, 200, { added: lib.readGrowth(cfg).items.length - before });
       }
       if (req.method === "POST" && u.pathname === "/api/add") { const b = await readBody(req); return send(res, 200, lib.addJob(cfg, { url: b.url, track: b.track, source: "portal" })); }
-      let m;
       if (req.method === "POST" && (m = u.pathname.match(/^\/api\/build\/([\w-]+)$/))) {
         const job = lib.readJobs(cfg).find(j => j.id === m[1]);
         if (!job) return send(res, 404, { error: "not found" });

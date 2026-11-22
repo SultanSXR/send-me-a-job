@@ -10,7 +10,7 @@ const HELP = `send-me-a-job — collect job links and build a tailored CV + cove
 
 Usage:
   send-me-a-job init                     Create config.json and profile.json in this folder
-  send-me-a-job add <url> [--track legal|business] [--note "..."] [--text advert.txt]
+  send-me-a-job add <url> [--track <name from your profile tracks>] [--note "..."] [--text advert.txt]
   send-me-a-job pull                     Import links from your Netlify form (needs NETLIFY_TOKEN)
   send-me-a-job list [--status ready]    Show jobs
   send-me-a-job build [id ...]           Build packs for new jobs (or the ids given)
@@ -18,6 +18,10 @@ Usage:
   send-me-a-job score [id ...]           Estimate your chance of an offer for open jobs (private)
   send-me-a-job suggest [--count 5]      Find open roles with your best chances, ranked
   send-me-a-job advice                   Profile changes that would raise your chances
+  send-me-a-job feedback add "<up to 140 characters>"   Record a suggestion for the portal
+  send-me-a-job feedback list            Show suggestions
+  send-me-a-job improve                  Turn new suggestions into proposals (uses the Anthropic API; changes nothing)
+  send-me-a-job proposals [approve|reject|published <id>]   List proposals, or record your decision
   send-me-a-job growth [programmes|courses] [--duration 3m|6m|1y|1y+] [--count 5]
                                          Find free mentorship/internship programmes and courses/certifications
                                          linked to your jobs (3m = up to 3 months, 1y+ = over a year)
@@ -69,14 +73,42 @@ async function main() {
     }
     case "add": {
       const url = f._[0];
-      if (!url) throw new Error("Usage: send-me-a-job add <url> [--track legal|business] [--note ...] [--text file]");
+      if (!url) throw new Error("Usage: send-me-a-job add <url> [--track <name from your profile tracks>] [--note ...] [--text file]");
       const advertText = typeof f.text === "string" ? fs.readFileSync(f.text, "utf8") : undefined;
       const { job, added } = lib.addJob(cfg, { url, track: f.track, note: typeof f.note === "string" ? f.note : "", advertText });
       if (!added && advertText) lib.updateJob(cfg, job.id, { advertText: advertText.slice(0, 40000), status: "new" });
       console.log(added ? `Added ${job.id}` : `Already listed as ${job.id}${advertText ? " (advert text updated)" : ""}`);
       break;
     }
-    case "pull": console.log(`Imported ${await lib.pullNetlify(cfg)} new link(s).`); break;
+    case "pull": {
+      console.log(`Imported ${await lib.pullNetlify(cfg)} new link(s).`);
+      const n = await lib.pullFeedback(cfg); if (n) console.log(`Imported ${n} new suggestion(s).`);
+      break;
+    }
+    case "feedback": {
+      const [sub, ...words] = f._;
+      if (sub === "add") { const r = lib.addFeedback(cfg, { text: words.join(" "), source: "cli" }); console.log(r.added ? `Recorded ${r.item.id}` : "Already recorded."); break; }
+      if (sub === "list" || !sub) {
+        const items = lib.readFeedback(cfg).items;
+        if (!items.length) { console.log('No suggestions yet. Add one with: send-me-a-job feedback add "..."'); break; }
+        for (const i of items) console.log(`${i.id}  ${i.status.padEnd(8)} ${i.source.padEnd(11)} ${i.text}`);
+        break;
+      }
+      throw new Error('Usage: send-me-a-job feedback add "<text>" | feedback list');
+    }
+    case "improve": await lib.improve(cfg); break;
+    case "proposals": {
+      const [act, id] = f._;
+      if (act) {
+        const status = { approve: "approved", reject: "rejected", published: "published" }[act];
+        if (!status) throw new Error("Usage: send-me-a-job proposals [approve|reject|published <id>]");
+        const p = lib.markProposal(cfg, id, status); console.log(`${p.id} → ${p.status}`); break;
+      }
+      const items = lib.readProposals(cfg).items;
+      if (!items.length) { console.log("No proposals yet. Run: send-me-a-job improve"); break; }
+      for (const p of items) console.log(`${p.id}  ${p.status.padEnd(17)} impact ${p.impact}/5 ${p.effort.padEnd(6)} risk ${p.risk.padEnd(6)} ${p.title}\n    ${p.change}`);
+      break;
+    }
     case "list": {
       const jobs = lib.readJobs(cfg).filter(j => !f.status || j.status === f.status);
       if (!jobs.length) { console.log("No jobs yet. Add one with: send-me-a-job add <url>"); break; }
@@ -86,8 +118,12 @@ async function main() {
     case "build": await buildMany(cfg, f._); break;
     case "run": {
       if (cfg.netlify?.formId && process.env.NETLIFY_TOKEN) console.log(`Imported ${await lib.pullNetlify(cfg)} new link(s) from Netlify.`);
+      try { const n = await lib.pullFeedback(cfg); if (n) console.log(`Imported ${n} new suggestion(s).`); } catch (e) { console.log(`  ✗ suggestions: ${e.message}`); }
       await buildMany(cfg, []);
       const profile = lib.loadProfile(cfg);
+      if (cfg.triageOnRun !== false && lib.readFeedback(cfg).items.some(x => x.status === "new")) {
+        try { await lib.improve(cfg); } catch (e) { console.log(`  ✗ review of suggestions: ${e.message}`); } // proposes only; never publishes
+      }
       await lib.scoreOpen(cfg, profile);
       if (f.suggest) {
         await lib.suggest(cfg, profile, cfg.suggestCount || 5);

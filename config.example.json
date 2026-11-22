@@ -21,9 +21,11 @@
   ],
   "growthPlatforms": [],
   "growthOnSuggest": true,
+  "triageOnRun": true,
   "netlify": {
-    "_comment": "Optional: pull links from a Netlify form (see public-form/). Needs NETLIFY_TOKEN in the environment.",
-    "formId": ""
+    "_comment": "Optional: pull links (formId) and 140-character suggestions (feedbackFormId) from Netlify forms (see public-form/). Needs NETLIFY_TOKEN in the environment.",
+    "formId": "",
+    "feedbackFormId": ""
   },
   "port": 4321
 }

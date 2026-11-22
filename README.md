@@ -39,6 +39,7 @@ templates/spec.example.json
 references/apply.md          filling in employer forms safely (live)
 references/hands-off.md      applying while you're away, with notifications
 references/automation.md     scheduled pack-building and the public link form
+references/feedback.md       visitor suggestions, proposals and the approval step
 references/growth.md         programmes, internships and free courses linked to your jobs
 ```
 
@@ -76,7 +77,7 @@ send-me-a-job init          # creates config.json and profile.json
 # edit profile.json: replace the example person with your own details
 
 export ANTHROPIC_API_KEY=sk-ant-...  # from console.anthropic.com
-send-me-a-job add https://careers.example.com/jobs/123 --track business
+send-me-a-job add https://careers.example.com/jobs/123 --track marketing
 send-me-a-job run           # builds packs for every new job
 send-me-a-job list
 ```
@@ -98,7 +99,7 @@ Each pack goes into `out/<job id>/` and contains `<Name>_<Company>_<Role>_CV.doc
 | Command | What it does |
 |---|---|
 | `init` | Create `config.json` and `profile.json` in the current folder |
-| `add <url> [--track legal\|business] [--note …] [--text file]` | Add a job link (duplicates are ignored) |
+| `add <url> [--track <name from your profile tracks>] [--note …] [--text file]` | Add a job link (duplicates are ignored) |
 | `pull` | Import links from your Netlify form (needs `NETLIFY_TOKEN` and `netlify.formId`) |
 | `build [id …]` | Build packs for new jobs, or for the ids given |
 | `run [--suggest]` | `pull` (if configured), `build`, `score` (and `suggest`). Use this from cron |
@@ -107,12 +108,13 @@ Each pack goes into `out/<job id>/` and contains `<Name>_<Company>_<Role>_CV.doc
 | `score [id …]` | Estimate your chance of an offer for open jobs (private) |
 | `suggest [--count 5]` | Find open roles where your chances are best, ranked |
 | `advice` | Profile changes that would raise your chances |
+| `feedback add\|list`, `improve`, `proposals [approve\|reject\|published <id>]` | Collect 140-character suggestions, turn them into proposals, record your decision |
 | `growth [programmes\|courses]` | Free programmes, internships, courses and certifications linked to your jobs (see below) |
 | `render <spec.json> [dir]` | Render a CV and letter from a spec, with no API call |
 | `serve [--port 4321]` | Local web portal |
 | `package-skill` | Build `dist/send-me-a-job-skill.zip` |
 
-Environment variables: `ANTHROPIC_API_KEY` (required to build), `ANTHROPIC_MODEL` (optional, default `claude-sonnet-5-5`), `ANTHROPIC_BASE_URL` (optional), `NETLIFY_TOKEN` (optional).
+Environment variables: `ANTHROPIC_API_KEY` (required to build, research and review suggestions), `ANTHROPIC_MODEL` (optional, default `claude-sonnet-5-5`), `ANTHROPIC_BASE_URL` (optional), `NETLIFY_TOKEN` (optional).
 
 ## Your chances, best-chance suggestions and advice
 
@@ -155,11 +157,20 @@ Every item shows its length. Filter by **Up to 3 months**, **Up to 6 months**, *
 
 In the Claude app, ask *"find me free courses and mentorships for these jobs"* or *"what 3-month courses would help me?"*. Settings in `config.json`: `growthCount`, `growthSearches`, `growthDurations`, `growthPlatforms`, `growthOnSuggest`.
 
+## Suggestions from visitors (140 characters)
+
+Next to where people add a job link, the public page and your local portal both have a box for **a suggestion of up to 140 characters**. The tool uses the Anthropic API to turn them into improvement proposals. **Nothing is changed or published without your approval.**
+
+1. **Collect.** Suggestions from the public page arrive through a second Netlify form (`portal-suggestions`). Put its form id in `config.json` → `netlify.feedbackFormId`; `pull` and `run` import them. Suggestions typed into the local portal, or added with `send-me-a-job feedback add "…"`, are stored straight away. All are kept in `data/feedback.json` on your computer.
+2. **Review.** `send-me-a-job improve` (also done automatically by `run`, unless `"triageOnRun": false`) groups the new suggestions into a few concrete proposals with impact, effort and risk. Spam, abuse and anything that would expose private data or remove an approval step is ignored. Suggestions are treated as untrusted text and never as instructions. It needs `ANTHROPIC_API_KEY`.
+3. **Approve.** Proposals appear in your local portal under "Proposed improvements" with **Approve** and **Reject**, or use `send-me-a-job proposals approve <id>`.
+4. **Publish.** Only an approved proposal is ever built, and the Claude skill (see `references/feedback.md`) prepares it on a branch, shows you what changed, and publishes only after your yes. Then it records `proposals published <id>`.
+
 ## 4. Let friends send you jobs (optional)
 
-`public-form/` is a static page with a Netlify form. Friends paste a link and choose *Legal* or *Non-legal*. No sign-in is needed.
+`public-form/` is a static page with a Netlify form. Friends paste a link and, if you define job types in `TRACKS`, choose one. No sign-in is needed.
 
-1. Set `OWNER` (your first name) at the top of the `<script>` in `public-form/index.html`. You can also set `FEED`, a published Google Sheet of suggested roles, or leave it empty.
+1. Set `OWNER` (your first name) at the top of the `<script>` in `public-form/index.html`. Optionally set `TRACKS` to your own kinds of job, matching the keys in your `profile.tracks` (for example `[{value:"marketing",label:"Marketing",hint:"Campaigns, content, growth"}]`; leave it empty to hide the choice), and `FEED`, a published Google Sheet of suggested roles.
 2. Deploy the folder to Netlify: drag it onto app.netlify.com/drop, or run `netlify deploy --prod --dir public-form`.
 3. Copy the form id from the Netlify dashboard into `config.json` → `netlify.formId`, and set `NETLIFY_TOKEN`. `send-me-a-job run` then imports new submissions every time it runs.
 

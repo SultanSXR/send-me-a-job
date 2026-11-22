@@ -10,11 +10,11 @@
   "workRights": "I will require visa sponsorship to work in the UK.",
   "needsSponsorship": true,
   "tracks": {
-    "legal": "Training contracts, vacation schemes, paralegal and other entry-level legal roles. Position as an aspiring solicitor; put education first.",
-    "business": "Business development, marketing and commercial roles. Position as a commercial professional with a law degree."
+    "marketing": "Marketing executive and coordinator roles. Position as a commercial marketer with hands-on campaign experience.",
+    "design": "Web design and digital product roles. Position as a founder who designs and ships client sites. Put education first if applying to graduate schemes."
   },
   "industries": ["Marketing", "Web design"],
-  "positioning": "Commercial professional with a law degree and experience running small businesses.",
+  "positioning": "Commercial professional with a business degree and experience running a small studio.",
   "experience": [
     {
       "title": "Founder",
@@ -38,7 +38,7 @@
     }
   ],
   "education": [
-    { "degree": "LLB (Hons) Law, 2:1", "school": "Example University", "dates": "2015 – 2018" }
+    { "degree": "BA (Hons) Business, 2:1", "school": "Example University", "dates": "2015 – 2018" }
   ],
   "certifications": ["Google Ads Search Certification (2022)"],
   "skills": ["Business development", "Digital marketing", "Copywriting", "Client relationships", "Commercial awareness"],
