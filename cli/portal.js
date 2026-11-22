@@ -144,7 +144,8 @@ function readBody(req) {
 function serve(cfg, port) {
   const server = http.createServer(async (req, res) => {
     try {
-      // Only accept same-origin requests to the local API.
+      // Only answer requests addressed to localhost (blocks DNS-rebinding), and only same-origin writes.
+      if (!/^(127\.0\.0\.1|localhost)(:\d+)?$/.test(req.headers.host || "")) return send(res, 403, { error: "forbidden" });
       if (req.method !== "GET" && req.headers.origin && !/^http:\/\/(127\.0\.0\.1|localhost):\d+$/.test(req.headers.origin)) return send(res, 403, { error: "forbidden" });
       const u = new URL(req.url, "http://x");
       let m;

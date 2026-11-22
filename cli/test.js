@@ -1,4 +1,5 @@
 // End-to-end self-test. Runs in a temp folder with a mock Anthropic API and a mock job page,
+process.env.SMJ_ALLOW_PRIVATE = process.env.SMJ_ALLOW_PRIVATE || "1";
 // so it needs no API key and no network. Usage: npm test
 "use strict";
 const fs = require("fs");
@@ -62,7 +63,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(0, "127.0.0.1", async () => {
   const base = `http://127.0.0.1:${server.address().port}`;
-  const env = { ...process.env, ANTHROPIC_API_KEY: "test", ANTHROPIC_BASE_URL: base, NODE_PATH: path.join(repo, "node_modules") };
+  const env = { ...process.env, SMJ_ALLOW_PRIVATE: "1", ANTHROPIC_API_KEY: "test", ANTHROPIC_BASE_URL: base, NODE_PATH: path.join(repo, "node_modules") };
   const run = (...a) => new Promise((ok, bad) => require("child_process").execFile("node", [cli, ...a], { cwd: tmp, env }, (e, so, se) => e ? bad(new Error(se || e.message)) : ok(so)));
   try {
     console.log(await run("init"));

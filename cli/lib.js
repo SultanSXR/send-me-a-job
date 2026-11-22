@@ -95,13 +95,37 @@ function htmlToText(html) {
     .replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim();
 }
 
+// Job links can come from a public form, so never fetch private, loopback or link-local
+// addresses (a stranger could otherwise point the fetcher at your home network or cloud metadata).
+function isPrivateIp(ip) {
+  const v4 = ip.match(/^(?:::ffff:)?(\d+)\.(\d+)\.(\d+)\.(\d+)$/);
+  if (v4) { const [a, b] = [+v4[1], +v4[2]]; return a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224; }
+  const l = ip.toLowerCase();
+  return l === "::" || l === "::1" || l.startsWith("fe80") || l.startsWith("fc") || l.startsWith("fd");
+}
+async function assertPublicUrl(url) {
+  if (process.env.SMJ_ALLOW_PRIVATE === "1") return; // tests only
+  const u = new URL(url);
+  if (u.protocol !== "https:" && u.protocol !== "http:") throw new Error("Only http(s) links are allowed");
+  if (u.username || u.password) throw new Error("Links with a username or password are not allowed");
+  const addrs = await require("dns").promises.lookup(u.hostname, { all: true });
+  if (!addrs.length || addrs.some(a => isPrivateIp(a.address))) throw new Error("That link points to a private or internal address");
+}
+
 async function fetchAdvert(url) {
-  const r = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 (send-me-a-job; +https://github.com)", "Accept": "text/html,*/*" },
-    redirect: "follow", signal: AbortSignal.timeout(20000),
-  });
+  let target = url, r;
+  for (let hop = 0; hop < 5; hop++) {
+    await assertPublicUrl(target);
+    r = await fetch(target, {
+      headers: { "User-Agent": "Mozilla/5.0 (send-me-a-job; +https://github.com)", "Accept": "text/html,*/*" },
+      redirect: "manual", signal: AbortSignal.timeout(20000),
+    });
+    if (r.status >= 300 && r.status < 400 && r.headers.get("location")) { target = new URL(r.headers.get("location"), target).href; continue; }
+    break;
+  }
+  if (r.status >= 300 && r.status < 400) throw new Error("Too many redirects");
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const text = htmlToText(await r.text());
+  const text = htmlToText((await r.text()).slice(0, 2e6));
   if (text.length < 300) throw new Error("page has too little text (it may need a sign-in or JavaScript)");
   return text.slice(0, 40000);
 }
