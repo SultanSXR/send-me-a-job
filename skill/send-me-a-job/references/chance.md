@@ -6,10 +6,10 @@ These are private to the user. Store them only in the job record (`chance`) and 
 
 Research with web search:
 1. **The advert.** List the essential and desirable requirements, location, closing date and any sponsorship wording.
-2. **Hiring history.** Find places per year, and applications per place if published (graduate guides publish these for many employers). If the user needs sponsorship, check the employer's sponsorship record (in the UK, the gov.uk register of licensed sponsors). Note any record of hiring people with backgrounds like the user's.
+2. **Hiring history.** Find places per year, and applications per place if published (graduate guides publish these for many employers). If the user needs sponsorship, check the employer's sponsorship record (the official register of licensed sponsors in the target country, where one exists, such as gov.uk in the UK). Note any record of hiring people with backgrounds like the user's.
 3. **Market and competition.** Gauge applicant volume (e.g. "over 100 applicants") and current conditions in that sector and location.
 4. **Past hires.** Only aggregate, public patterns: published intake profiles, "meet our trainees" pages, guides. Never record names or details of individuals, never open private social-media profiles, and never build a profile of a person.
-5. **Work rights.** How likely the employer is to sponsor this role. If the user needs sponsorship, also check that the occupation is eligible and the salary meets the threshold (in the UK, the Skilled Worker occupation list and salary rules on gov.uk). Cut the score sharply if it clearly doesn't.
+5. **Work rights.** How likely the employer is to sponsor this role. If the user needs sponsorship, also check that the occupation is eligible and the salary meets the threshold (for example the UK Skilled Worker list, the US H-1B rules, Canada's LMIA and TEER rules, or Germany's Blue Card, from the official government site). Cut the score sharply if it clearly doesn't.
 
 Use the user's own figures from `data/facts.json`: real results they entered strengthen the skills match. Treat employers in `data/targeting.json` `avoid` as ruled out, and those on its prefer lists as positives.
 
@@ -48,7 +48,7 @@ When finding new roles, aim where the user's chances are highest:
 - roles with more places per applicant;
 - employers that say they welcome career changers or recruit from a wide range of universities;
 - roles whose required experience the user actually meets;
-- routes employers actually hire from (e.g. firms that recruit trainees mainly through vacation schemes);
+- routes employers actually hire from (e.g. firms that recruit mainly through internships, summer schemes or graduate programmes);
 - employers on the targeting prefer lists, never those in `avoid`. Add newly confirmed sponsors and newly found right-to-work-only schemes to `data/targeting.json`.
 
 Check each role on the employer's own page and score it with the method above.

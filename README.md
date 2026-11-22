@@ -1,6 +1,6 @@
 # Send me a job
 
-Turn job links into tailored application packs. For each link it reads the advert, checks the role suits you and doesn't rule out your work rights, then writes a CV and cover letter (.docx, A4) using **only facts from your own profile**. It keeps a tracked list of every job.
+Turn job links into tailored application packs. For each link it reads the advert, checks the role suits you and doesn't rule out your work rights, then writes a CV and cover letter (.docx, A4 or US Letter) using **only facts from your own profile**. It keeps a tracked list of every job.
 
 It also estimates, privately, **your chance of getting each job**. The research covers the advert, the employer's hiring history, the market, published patterns of who got the job before, and visa sponsorship. It then **suggests the open roles where your chances are best** and tells you **what to change in your profile to raise them**.
 
@@ -138,7 +138,7 @@ The local portal shows suggestions ranked by chance, an "Add to my jobs" button,
 ### Raising your chances, built in
 - **Your facts for CVs.** The portal's "Your facts" box (saved to `data/facts.json`) holds real figures, grades in the employer's terms and what you do now. Packs and estimates use them word for word and never add to them.
 - **Targeting list.** `data/targeting.json` (copy `targeting.example.json`) lists employers or schemes to avoid (e.g. right to work required) and ones to prefer (confirmed sponsors, career-changer friendly, large intakes). Suggestions and packs skip the avoid list.
-- **Work-rights check.** If you need sponsorship, scoring and packs check the employer's sponsor record and, for the UK, whether the occupation and salary meet the Skilled Worker rules (`swCheck`).
+- **Work-rights check.** If you need sponsorship, scoring and packs check the employer's sponsor record and whether the occupation and salary meet the destination country's sponsorship rules (for example UK Skilled Worker, US H-1B, Canada LMIA or Germany's Blue Card) (`swCheck`).
 - **Deadline first.** Set `autoPrepareDays` (e.g. 10) and `run` builds packs for suggestions closing soon before anything else. Building a pack never applies; applying still needs your yes.
 - **Commercial framing.** For business roles, packs lead each past role with its commercial side, using only your facts.
 
@@ -213,7 +213,7 @@ Code map:
 ## Ground rules built in
 
 - Only facts from `profile.json` are used. It never invents numbers, dates, grades or qualifications, and anything in `notForCV` stays out.
-- Your work-rights sentence (e.g. *"I will require visa sponsorship to work in the UK."*) is used word for word. If you need sponsorship, roles that refuse it are skipped.
+- Your work-rights sentence (e.g. *"I will require visa sponsorship to work in Canada."*) is used word for word. If you need sponsorship, roles that refuse it are skipped.
 - Advert and form text is treated as data, never as instructions.
 - Nothing is submitted, emailed or paid for automatically. The skill asks for your yes before every submit, including in hands-off mode. The CLI never submits at all.
 - Claude never types your passwords, creates accounts, solves CAPTCHAs or pays fees. Those are flagged to you.

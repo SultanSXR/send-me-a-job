@@ -2,11 +2,12 @@
   "name": "Jane Doe",
   "email": "jane.doe@example.com",
   "phone": "",
-  "location": "Manchester, United Kingdom",
+  "location": "Bengaluru, India",
   "linkedin": "linkedin.com/in/example",
   "fileBase": "Jane_Doe_Example_Co_Marketing_Executive",
+  "paper": "Letter",
   "cv": {
-    "headline": "Marketing & Business Development | BA (Hons) Business",
+    "headline": "Marketing & Business Development | Bachelor of Business Administration",
     "profile": "Commercial professional with a business degree and hands-on experience running a small web design business and paid marketing campaigns.",
     "skills": ["Digital marketing", "Copywriting", "Client relationships", "Commercial awareness"],
     "educationFirst": false,
@@ -16,12 +17,12 @@
         "bullets": ["Founded and run a small web design business serving local companies"]
       }
     ],
-    "education": [{ "degree": "BA (Hons) Business, 2:1", "school": "Example University", "dates": "2015 – 2018" }],
+    "education": [{ "degree": "Bachelor of Business Administration", "school": "Example University", "dates": "2015 – 2018" }],
     "certifications": ["Google Ads Search Certification (2022)"]
   },
   "letter": {
-    "date": "1 January 2027",
-    "recipient": ["Example Co", "London"],
+    "date": "January 1, 2027",
+    "recipient": ["Example Co", "Toronto"],
     "company": "Example Co",
     "role": "Marketing Executive",
     "salutation": "Dear Hiring Manager,",
@@ -29,8 +30,8 @@
       "I am applying for the Marketing Executive role at Example Co.",
       "Second paragraph: why this company, using real facts from its website.",
       "Third paragraph: the most relevant experience from the profile.",
-      "I will require visa sponsorship to work in the UK. Thank you for considering my application."
+      "I will require visa sponsorship to work in Canada. Thank you for considering my application."
     ],
-    "signoff": "Yours sincerely,"
+    "signoff": "Sincerely,"
   }
 }

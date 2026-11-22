@@ -1,4 +1,4 @@
-// Renders a tailored UK CV and cover letter as .docx from a spec JSON.
+// Renders a tailored CV and cover letter as .docx from a spec JSON (A4 or US Letter).
 // Usage: node make_docs.js spec.json outDir
 //    or: const { render } = require("./make_docs.js"); await render(spec, outDir)
 // spec = {
@@ -6,7 +6,8 @@
 //   cv: { headline, profile, skills:[..], experience:[{title,company,dates,location,bullets:[..]}],
 //         education:[{degree,school,dates}], certifications:[..], educationFirst: true|false },
 //   letter: { date, recipient:[lines], company, role, salutation, paragraphs:[..], signoff },
-//   fileBase: "Jane_Doe_Company_Role"
+//   fileBase: "Jane_Doe_Company_Role",
+//   paper: "A4" | "Letter"   (optional, default A4; use Letter for the US, Canada and Mexico)
 // }
 const fs = require("fs");
 const path = require("path");
@@ -14,8 +15,9 @@ const { Document, Packer, Paragraph, TextRun, AlignmentType, LevelFormat, Border
         TabStopType } = require("docx");
 
 const FONT = "Calibri", ACCENT = "1D4D4F";
-const PAGE = { size: { width: 11906, height: 16838 }, margin: { top: 1000, bottom: 1000, left: 1100, right: 1100 } }; // A4
-const RIGHT = 11906 - 1100 - 1100;
+const PAPERS = { A4: { width: 11906, height: 16838 }, Letter: { width: 12240, height: 15840 } };
+const MARGIN = { top: 1000, bottom: 1000, left: 1100, right: 1100 };
+const paperOf = spec => { const k = String(spec.paper || "A4").toLowerCase() === "letter" ? "Letter" : "A4"; return PAPERS[k]; };
 
 const styles = {
   default: { document: { run: { font: FONT, size: 21 }, paragraph: { spacing: { after: 60, line: 264 } } } },
@@ -24,6 +26,7 @@ const numbering = { config: [{ reference: "b", levels: [{ level: 0, format: Leve
   alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 360, hanging: 240 } } } }] }] };
 
 function build(spec) {
+  const RIGHT = paperOf(spec).width - MARGIN.left - MARGIN.right;
   const contact = [spec.email, spec.phone, spec.linkedin, spec.location].filter(Boolean).join("  |  ");
 
   function section(title) {
@@ -89,16 +92,16 @@ function build(spec) {
   return { cvChildren, letterChildren };
 }
 
-const mk = (name, children) => new Document({ creator: name, styles, numbering,
-  sections: [{ properties: { page: PAGE }, children: children.filter(Boolean) }] });
+const mk = (spec, children) => new Document({ creator: spec.name, styles, numbering,
+  sections: [{ properties: { page: { size: paperOf(spec), margin: MARGIN } }, children: children.filter(Boolean) }] });
 
 async function render(spec, outDir = ".") {
   const { cvChildren, letterChildren } = build(spec);
   fs.mkdirSync(outDir, { recursive: true });
   const base = String(spec.fileBase || "CV").replace(/[^A-Za-z0-9_]/g, "_");
   const a = path.join(outDir, `${base}_CV.docx`), b = path.join(outDir, `${base}_Cover_Letter.docx`);
-  fs.writeFileSync(a, await Packer.toBuffer(mk(spec.name, cvChildren)));
-  fs.writeFileSync(b, await Packer.toBuffer(mk(spec.name, letterChildren)));
+  fs.writeFileSync(a, await Packer.toBuffer(mk(spec, cvChildren)));
+  fs.writeFileSync(b, await Packer.toBuffer(mk(spec, letterChildren)));
   return { cv: a, letter: b };
 }
 

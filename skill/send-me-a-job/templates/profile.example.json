@@ -3,12 +3,20 @@
   "name": "Jane Doe",
   "email": "jane.doe@example.com",
   "phone": "",
-  "location": "Manchester, United Kingdom",
+  "location": "Bengaluru, India",
   "linkedin": "linkedin.com/in/example",
-  "targetCountry": "United Kingdom",
-  "language": "UK English",
-  "workRights": "I will require visa sponsorship to work in the UK.",
+  "homeCountry": "India",
+  "nationality": "Indian",
+  "targetCountry": "Canada",
+  "targetCountries": ["Canada"],
+  "language": "Canadian English",
+  "paper": "Letter",
+  "workRights": "I will require visa sponsorship to work in Canada.",
   "needsSponsorship": true,
+  "jobSites": ["LinkedIn", "Indeed Canada", "Company career pages"],
+  "growthPlatforms": [],
+  "minChance": 2,
+  "autoPrepareDays": 10,
   "tracks": {
     "marketing": "Marketing executive and coordinator roles. Position as a commercial marketer with hands-on campaign experience.",
     "design": "Web design and digital product roles. Position as a founder who designs and ships client sites. Put education first if applying to graduate schemes."
@@ -30,7 +38,7 @@
       "title": "Marketing Assistant",
       "company": "Example Travel Ltd",
       "dates": "Sep 2018 – Dec 2019",
-      "location": "Leeds, UK",
+      "location": "Mumbai, India",
       "bullets": [
         "Ran paid search and social campaigns and reported on results",
         "Wrote copy for ads, email and the website"
@@ -38,7 +46,7 @@
     }
   ],
   "education": [
-    { "degree": "BA (Hons) Business, 2:1", "school": "Example University", "dates": "2015 – 2018" }
+    { "degree": "Bachelor of Business Administration", "school": "Example University", "dates": "2015 – 2018" }
   ],
   "certifications": ["Google Ads Search Certification (2022)"],
   "skills": ["Business development", "Digital marketing", "Copywriting", "Client relationships", "Commercial awareness"],
